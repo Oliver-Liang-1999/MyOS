@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyOS — Bookshelf</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F5F2ED">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F2ED; --surface:#FDFBF8; --border:#E4DFD7;
+  --text:#1A1714; --muted:#8A8178; --accent:#2D5A3D; --accent-lt:#EBF3EE;
+  --warn:#C4622D; --warn-lt:#FDF0E9;
+  --r:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow-hover:0 4px 12px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.07);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+header{padding:40px 24px 0;max-width:700px;margin:0 auto;display:flex;align-items:center;gap:16px}
+.back-btn{background:none;border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;transition:border-color .15s,color .15s;text-decoration:none;flex-shrink:0}
+.back-btn:hover{border-color:var(--accent);color:var(--accent)}
+.page-title{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-.3px}
+
+.divider{max-width:700px;margin:20px auto 0;padding:0 24px}
+.divider hr{border:none;border-top:1px solid var(--border)}
+main{max-width:700px;margin:0 auto;padding:28px 24px 80px}
+
+.view{display:none}.view.active{display:block}
+
+/* add bar */
+.add-bar{display:flex;gap:8px;margin-bottom:24px}
+.add-bar input{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+.add-bar input:focus{border-color:var(--accent)}
+.add-bar button{padding:11px 18px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+
+/* book list */
+.book-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:12px;cursor:pointer;transition:box-shadow .15s,transform .15s;animation:fadeUp .3s ease both}
+.book-item:hover{box-shadow:var(--shadow-hover);transform:translateY(-2px)}
+.book-item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.book-title{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400}
+.book-author{font-size:12px;color:var(--muted);margin-top:3px}
+.book-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.book-tag{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--border);color:var(--muted)}
+.book-tag.read{background:var(--accent-lt);color:var(--accent)}
+.book-tag.want{background:#EEF0FB;color:#5B4FCF}
+.book-tag.reading{background:#FDF6E9;color:#B87333}
+.book-meta{display:flex;gap:16px;margin-top:12px}
+.book-meta-item{font-size:11px;color:var(--muted)}
+.book-delete{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;flex-shrink:0;opacity:.6;transition:opacity .15s}
+.book-delete:hover{opacity:1}
+.empty-state{text-align:center;padding:48px 0;color:var(--muted);font-size:14px;line-height:1.8}
+
+/* api section */
+.api-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:32px}
+.api-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px}
+.api-row{display:flex;gap:8px}
+.api-input{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);color:var(--text);outline:none}
+.api-input:focus{border-color:var(--accent)}
+.api-save-btn{padding:9px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
+.api-hint{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* detail view */
+.detail-header{margin-bottom:4px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.detail-header-text{flex:1}
+.detail-title{font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;letter-spacing:-.3px;line-height:1.2}
+.detail-author{font-size:13px;color:var(--muted);margin-top:4px;margin-bottom:4px}
+.edit-meta-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.edit-meta-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* edit fields (hidden by default) */
+.edit-meta-form{display:none;gap:8px;flex-direction:column;margin-bottom:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px}
+.edit-meta-form.show{display:flex}
+.edit-meta-form input{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface);color:var(--text);outline:none}
+.edit-meta-form input:focus{border-color:var(--accent)}
+.edit-meta-btns{display:flex;gap:8px}
+.edit-meta-btns button{flex:1;padding:9px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border:none}
+.btn-save-meta{background:var(--accent);color:#fff}
+.btn-cancel-meta{background:var(--border);color:var(--text)}
+
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:20px 0 10px}
+
+/* tags */
+.tags-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tag-btn{font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted);transition:all .15s}
+.tag-btn.active{background:var(--accent-lt);color:var(--accent);border-color:var(--accent-lt)}
+.tag-add-row{display:flex;gap:6px;margin-bottom:4px}
+.tag-add-row input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--bg);outline:none;color:var(--text)}
+.tag-add-row input:focus{border-color:var(--accent)}
+.tag-add-row button{padding:8px 14px;background:var(--border);border:none;border-radius:8px;font-size:13px;cursor:pointer}
+
+/* notes */
+.notes-area{width:100%;min-height:100px;padding:14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface);color:var(--text);resize:vertical;outline:none;line-height:1.6}
+.notes-area:focus{border-color:var(--accent)}
+
+/* quotes */
+.generate-btn{width:100%;padding:13px;border:1px dashed var(--border);border-radius:10px;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:14px;transition:border-color .15s,color .15s}
+.generate-btn:hover{border-color:var(--accent);color:var(--accent)}
+.generate-btn:disabled{opacity:.4;cursor:default}
+
+.quote-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;animation:fadeUp .25s ease both}
+.quote-text{flex:1;font-size:14px;line-height:1.6;font-style:italic;color:var(--text)}
+.quote-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.q-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:2px;opacity:.35;transition:opacity .15s;line-height:1}
+.q-btn:hover{opacity:.8}
+.q-btn.liked{opacity:1}
+.no-quotes{font-size:13px;color:var(--muted);margin-bottom:12px}
+
+/* status/error messages */
+.status-msg{font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:12px;line-height:1.5;display:none}
+.status-msg.show{display:block}
+.status-msg.info{background:var(--accent-lt);color:var(--accent);border:1px solid #C5DFC9}
+.status-msg.warn{background:var(--warn-lt);border:1px solid #F0CFC0;color:#7A3A1A}
+.status-msg.error{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back-btn" href="hub.html">← Hub</a>
+  <div class="page-title" id="page-title">Bookshelf</div>
+</header>
+<div class="divider"><hr></div>
+
+<main>
+
+  <!-- LIST VIEW -->
+  <div class="view active" id="list-view">
+    <div class="add-bar">
+      <input id="book-input" type="text" placeholder="Title — Author  (e.g. Meditations — Marcus Aurelius)">
+      <button onclick="addBook()">Add</button>
+    </div>
+    <div id="book-list"></div>
+    <div class="api-section">
+      <div class="api-label">Haiku API Key</div>
+      <div class="api-row">
+        <input class="api-input" id="api-key-input" type="text" placeholder="sk-ant-api03-..." autocorrect="off" autocapitalize="none" spellcheck="false">
+        <button class="api-save-btn" onclick="saveApiKey()">Save</button>
+      </div>
+      <div class="api-hint" id="api-key-hint">Required for generating quotes. Stored locally on your device only.</div>
+    </div>
+  </div>
+
+  <!-- DETAIL VIEW -->
+  <div class="view" id="detail-view">
+
+    <!-- Title / author display + edit button -->
+    <div class="detail-header">
+      <div class="detail-header-text">
+        <div class="detail-title" id="detail-title"></div>
+        <div class="detail-author" id="detail-author"></div>
+      </div>
+      <button class="edit-meta-btn" onclick="toggleEditMeta()">Edit</button>
+    </div>
+
+    <!-- Edit form (hidden by default) -->
+    <div class="edit-meta-form" id="edit-meta-form">
+      <input id="edit-title-input" type="text" placeholder="Title">
+      <input id="edit-author-input" type="text" placeholder="Author">
+      <div class="edit-meta-btns">
+        <button class="btn-cancel-meta" onclick="toggleEditMeta()">Cancel</button>
+        <button class="btn-save-meta" onclick="saveBookMeta()">Save</button>
+      </div>
+    </div>
+
+    <div class="section-label">Tags</div>
+    <div class="tags-row" id="detail-tags"></div>
+    <div class="tag-add-row">
+      <input id="tag-input" type="text" placeholder="Custom tag...">
+      <button onclick="addTag()">+</button>
+    </div>
+
+    <div class="section-label">My notes</div>
+    <textarea class="notes-area" id="detail-notes" placeholder="Your thoughts, impressions, things that struck you while reading..." oninput="saveBookNotes()"></textarea>
+
+    <div class="section-label">Quotes</div>
+    <div class="status-msg" id="status-msg"></div>
+    <button class="generate-btn" id="gen-btn" onclick="generateQuotes()">✦ Generate quotes with Haiku</button>
+    <div id="detail-quotes"></div>
+
+    <div class="section-label">Add a quote manually</div>
+    <div class="add-bar" style="margin-bottom:0">
+      <input id="manual-quote-input" type="text" placeholder="Paste a quote here...">
+      <button onclick="addManualQuote()">Add</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Auth check ──
+if(sessionStorage.getItem('myos_authed')!=='1'){
+  window.location.href='hub.html';
+}
+
+// ── Data ──
+function getBS(){ try{ return JSON.parse(localStorage.getItem('myos_bookshelf')||'{}'); }catch(e){return{};} }
+function saveBS(d){ localStorage.setItem('myos_bookshelf',JSON.stringify(d)); }
+
+let currentBookId=null;
+
+// ── Views ──
+function showList(){
+  document.getElementById('list-view').classList.add('active');
+  document.getElementById('detail-view').classList.remove('active');
+  document.getElementById('page-title').textContent='Bookshelf';
+  renderBookList();
+  const key=localStorage.getItem('myos_haiku_key')||'';
+  document.getElementById('api-key-input').value=key?key.slice(0,12)+'…':'';
+  document.getElementById('api-key-hint').textContent=key?'API key saved — stored locally on your device only.':'Required for generating quotes. Stored locally on your device only.';
+}
+
+function showDetail(id){
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===id); if(!book) return;
+  currentBookId=id;
+  document.getElementById('list-view').classList.remove('active');
+  document.getElementById('detail-view').classList.add('active');
+  document.getElementById('page-title').textContent='';
+  document.getElementById('edit-meta-form').classList.remove('show');
+  setStatus('');
+  refreshDetailHeader(book);
+  document.getElementById('detail-notes').value=book.notes||'';
+  renderTags(book);
+  renderQuotes(book);
+}
+
+function refreshDetailHeader(book){
+  document.getElementById('detail-title').textContent=book.title;
+  document.getElementById('detail-author').textContent=book.author||'No author set';
+}
+
+// ── Book list ──
+function renderBookList(){
+  const data=getBS(); const books=data.books||[];
+  const el=document.getElementById('book-list');
+  if(!books.length){
+    el.innerHTML='<div class="empty-state">No books yet.<br>Add your first one above.<br><span style="font-size:12px;opacity:.6">Format: Title — Author</span></div>';
+    return;
+  }
+  el.innerHTML=books.map((b,i)=>`
+    <div class="book-item" style="animation-delay:${i*0.04}s" onclick="showDetail('${b.id}')">
+      <div class="book-item-top">
+        <div>
+          <div class="book-title">${esc(b.title)}</div>
+          ${b.author?`<div class="book-author">${esc(b.author)}</div>`:'<div class="book-author" style="font-style:italic">No author</div>'}
+        </div>
+        <button class="book-delete" onclick="event.stopPropagation();deleteBook('${b.id}')" title="Remove">✕</button>
+      </div>
+      <div class="book-tags">${(b.tags||[]).map(t=>`<span class="book-tag ${tagClass(t)}">${esc(t)}</span>`).join('')}</div>
+      <div class="book-meta">
+        <span class="book-meta-item">${(b.quotes||[]).length} quote${(b.quotes||[]).length!==1?'s':''}</span>
+        ${b.notes?'<span class="book-meta-item">📝 Notes</span>':''}
+        ${(b.quotes||[]).some(q=>q.liked)?'<span class="book-meta-item">❤ Liked</span>':''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function tagClass(t){
+  if(t==='read') return 'read';
+  if(t==='want to read') return 'want';
+  if(t==='reading') return 'reading';
+  return '';
+}
+
+function addBook(){
+  const raw=document.getElementById('book-input').value.trim(); if(!raw) return;
+  const parts=raw.split(/\s*[—–\-]\s*/);
+  const title=parts[0].trim(); const author=parts[1]?.trim()||'';
+  const data=getBS(); if(!data.books) data.books=[];
+  data.books.unshift({id:Date.now().toString(36),title,author,tags:[],quotes:[],notes:''});
+  saveBS(data); document.getElementById('book-input').value=''; renderBookList();
+}
+
+function deleteBook(id){
+  if(!confirm('Remove this book from your shelf?')) return;
+  const data=getBS(); data.books=(data.books||[]).filter(b=>b.id!==id); saveBS(data); renderBookList();
+}
+
+// ── Edit title/author ──
+function toggleEditMeta(){
+  const form=document.getElementById('edit-meta-form');
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId);
+  if(!form.classList.contains('show')){
+    document.getElementById('edit-title-input').value=book?.title||'';
+    document.getElementById('edit-author-input').value=book?.author||'';
+    form.classList.add('show');
+  } else {
+    form.classList.remove('show');
+  }
+}
+
+function saveBookMeta(){
+  const newTitle=document.getElementById('edit-title-input').value.trim();
+  const newAuthor=document.getElementById('edit-author-input').value.trim();
+  if(!newTitle){ alert('Title cannot be empty.'); return; }
+
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  const titleChanged = newTitle!==book.title || newAuthor!==book.author;
+  const hasQuotes = (book.quotes||[]).length > 0;
+
+  if(titleChanged && hasQuotes){
+    const wipe = confirm(`You've changed the title or author.\n\nDo you want to clear the existing ${book.quotes.length} Haiku-generated quote(s)?\n\nTap OK to clear them, or Cancel to keep them.`);
+    if(wipe) book.quotes=[];
+  }
+
+  book.title=newTitle;
+  book.author=newAuthor;
+  saveBS(data);
+  refreshDetailHeader(book);
+  document.getElementById('edit-meta-form').classList.remove('show');
+  // clear daily quote cache so compass refreshes
+  localStorage.removeItem('myos_daily_quote');
+}
+
+// ── Tags ──
+const PRESET_TAGS=['read','want to read','reading','Stoic','fiction','philosophy','dense','favourite'];
+function renderTags(book){
+  const el=document.getElementById('detail-tags');
+  const active=book.tags||[];
+  el.innerHTML=PRESET_TAGS.map(t=>`<button class="tag-btn ${active.includes(t)?'active':''}" onclick="toggleTag('${t}')">${t}</button>`).join('')+
+    active.filter(t=>!PRESET_TAGS.includes(t)).map(t=>`<button class="tag-btn active" onclick="toggleTag('${esc(t)}')">${esc(t)} ✕</button>`).join('');
+}
+
+function toggleTag(tag){
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  if(!book.tags) book.tags=[];
+  const idx=book.tags.indexOf(tag);
+  if(idx>=0) book.tags.splice(idx,1); else book.tags.push(tag);
+  saveBS(data); renderTags(book);
+}
+
+function addTag(){
+  const val=document.getElementById('tag-input').value.trim(); if(!val) return;
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  if(!book.tags) book.tags=[];
+  if(!book.tags.includes(val)) book.tags.push(val);
+  saveBS(data); document.getElementById('tag-input').value=''; renderTags(book);
+}
+document.getElementById('tag-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTag()});
+
+// ── Notes ──
+function saveBookNotes(){
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  book.notes=document.getElementById('detail-notes').value; saveBS(data);
+}
+
+// ── Quotes ──
+function renderQuotes(book){
+  const el=document.getElementById('detail-quotes');
+  if(!(book.quotes||[]).length){
+    el.innerHTML='<div class="no-quotes">No quotes yet — generate some above or add manually below.</div>'; return;
+  }
+  el.innerHTML=book.quotes.map((q,i)=>`
+    <div class="quote-item" style="animation-delay:${i*0.04}s">
+      <div class="quote-text">${esc(q.text)}</div>
+      <div class="quote-actions">
+        <button class="q-btn ${q.liked?'liked':''}" onclick="toggleLike(${i})" title="${q.liked?'Unlike':'Like'}">❤</button>
+        <button class="q-btn" onclick="removeQuote(${i})" title="Remove" style="font-size:14px">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleLike(i){
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  book.quotes[i].liked=!book.quotes[i].liked; saveBS(data); renderQuotes(book);
+  localStorage.removeItem('myos_daily_quote');
+}
+
+function removeQuote(i){
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  book.quotes.splice(i,1); saveBS(data); renderQuotes(book);
+}
+
+function addManualQuote(){
+  const val=document.getElementById('manual-quote-input').value.trim(); if(!val) return;
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  if(!book.quotes) book.quotes=[];
+  book.quotes.push({text:val,liked:false,manual:true}); saveBS(data);
+  document.getElementById('manual-quote-input').value=''; renderQuotes(book);
+}
+document.getElementById('manual-quote-input').addEventListener('keydown',e=>{if(e.key==='Enter')addManualQuote()});
+
+// ── Status messages ──
+function setStatus(msg, type='info'){
+  const el=document.getElementById('status-msg');
+  if(!msg){ el.className='status-msg'; el.textContent=''; return; }
+  el.className=`status-msg ${type} show`;
+  el.textContent=msg;
+}
+
+// ── API key ──
+function saveApiKey(){
+  const val=document.getElementById('api-key-input').value.trim();
+  if(!val||val.includes('…')) return;
+  localStorage.setItem('myos_haiku_key',val);
+  document.getElementById('api-key-input').value=val.slice(0,12)+'…';
+  document.getElementById('api-key-hint').textContent='API key saved — stored locally on your device only.';
+}
+
+// ── Haiku generation ──
+async function callHaiku(key, prompt){
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:900,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!res.ok){
+    const errBody=await res.json().catch(()=>({}));
+    const status=res.status;
+    if(status===401) throw new Error('AUTH');
+    if(status===429) throw new Error('RATE');
+    throw new Error(`HTTP ${status}: ${errBody?.error?.message||''}`);
+  }
+  return await res.json();
+}
+
+function extractQuotes(raw){
+  // find outermost JSON array
+  const start=raw.indexOf('['); const end=raw.lastIndexOf(']');
+  if(start===-1||end===-1) return null;
+  try{
+    const arr=JSON.parse(raw.slice(start,end+1));
+    if(!Array.isArray(arr)||!arr.length) return null;
+    return arr.filter(q=>typeof q==='string'&&q.trim().length>10);
+  }catch(e){ return null; }
+}
+
+function isRefusal(raw){
+  const lower=raw.toLowerCase();
+  return (lower.includes("i'm unable")||lower.includes("i cannot")||lower.includes("i can't")||
+          lower.includes("copyright")||lower.includes("reproduce")||lower.includes("not able to provide")) &&
+         raw.indexOf('[')===-1;
+}
+
+async function generateQuotes(){
+  const data=getBS(); const book=(data.books||[]).find(b=>b.id===currentBookId); if(!book) return;
+  const key=localStorage.getItem('myos_haiku_key');
+  if(!key){ setStatus('Save your Haiku API key at the bottom of the bookshelf list first.','warn'); return; }
+
+  const btn=document.getElementById('gen-btn');
+  btn.disabled=true; btn.textContent='Generating…';
+  setStatus('');
+
+  const title=book.title;
+  const author=book.author||'';
+  const existing=(book.quotes||[]).map(q=>q.text.slice(0,50)).join(' | ');
+  const avoidStr=existing?`\nAvoid these already saved: ${existing}`:'';
+
+  // Stage 1 — ask for real/paraphrased quotes
+  const prompt1=`Return 4 meaningful passages or close paraphrases from "${title}"${author?' by '+author:''}.
+If you are unsure of the author, try to identify who wrote this book.
+Choose lines that are resonant, grounded, and quietly significant — not generic motivation.
+For each: if it is a faithful paraphrase rather than exact wording, append " [paraphrased]" to that string.${avoidStr}
+Respond ONLY with a raw JSON array of 4 strings. No markdown, no preamble, no explanation.
+Example: ["Line one here.","Line two here.","Line three here.","Line four here."]`;
+
+  // Stage 2 fallback — ask for key ideas instead
+  const prompt2=`The book "${title}"${author?' by '+author:''} contains important ideas. 
+Express 4 of its most significant insights as short, standalone sentences in the spirit of the book's voice.
+These should feel like something the author might have written, grounded in the book's themes.
+They do not need to be verbatim quotes — they should capture the essence faithfully.${avoidStr}
+Respond ONLY with a raw JSON array of 4 strings. No markdown, no preamble.
+Example: ["Insight one.","Insight two.","Insight three.","Insight four."]`;
+
+  let quotes = null;
+  let usedFallback = false;
+
+  try{
+    // Stage 1
+    const d1 = await callHaiku(key, prompt1);
+    const raw1 = d1.content?.[0]?.text||'';
+    console.log('Stage 1 raw:', raw1);
+
+    if(!isRefusal(raw1)){
+      quotes = extractQuotes(raw1);
+    }
+
+    // Stage 2 — fallback if refused or parse failed
+    if(!quotes){
+      btn.textContent='Trying another approach…';
+      const d2 = await callHaiku(key, prompt2);
+      const raw2 = d2.content?.[0]?.text||'';
+      console.log('Stage 2 raw:', raw2);
+      quotes = extractQuotes(raw2);
+      usedFallback = true;
+    }
+
+    if(!quotes||!quotes.length){
+      setStatus('Haiku couldn\'t generate quotes for this book. Try adding the author name, or add quotes manually below.','warn');
+      btn.disabled=false; btn.textContent='✦ Try again';
+      return;
+    }
+
+    if(!book.quotes) book.quotes=[];
+    quotes.forEach(q=>{ book.quotes.push({text:q.trim(),liked:false}); });
+    saveBS(data); renderQuotes(book);
+
+    const note = usedFallback?' (paraphrased — Haiku had limited recall for this title)':'';
+    setStatus(`${quotes.length} quote${quotes.length!==1?'s':''} added${note}.`,'info');
+    setTimeout(()=>setStatus(''),4000);
+    btn.textContent='✦ Generate more quotes';
+
+  }catch(e){
+    if(e.message==='AUTH') setStatus('API key rejected. Check the key saved in the bookshelf.','error');
+    else if(e.message==='RATE') setStatus('Rate limit — wait a moment and try again.','warn');
+    else{ setStatus('Network error. Check your connection and try again.','error'); console.error(e); }
+    btn.textContent='✦ Try again';
+  }
+  btn.disabled=false;
+}
+
+// ── Utils ──
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+document.getElementById('book-input').addEventListener('keydown',e=>{if(e.key==='Enter')addBook()});
+
+// init
+showList();
+</script>
+</body>
+</html>

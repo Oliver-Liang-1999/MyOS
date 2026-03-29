@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reservoir — MyOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F2ED; --surface:#FDFBF8; --border:#E4DFD7;
+  --text:#1A1714; --muted:#8A8178; --accent:#2D5A3D; --accent-lt:#EBF3EE;
+  --warn:#C4622D; --warn-lt:#FDF0E9; --amber:#9A6B1A; --amber-lt:#FDF5E6;
+  --gold:#B8860B; --gold-lt:#FFF8E1;
+  --r:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow-hover:0 4px 12px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.07);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── LAYOUT ── */
+header{padding:40px 48px 0;display:flex;justify-content:space-between;align-items:flex-end;max-width:1100px;margin:0 auto}
+.logo{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-.5px}
+.logo a{text-decoration:none;color:inherit}
+.logo span{color:var(--accent);font-style:italic}
+.header-right{text-align:right}
+.back-link{font-size:12px;color:var(--muted);text-decoration:none;display:block;margin-bottom:4px;transition:color .15s}
+.back-link:hover{color:var(--accent)}
+#date-display{font-size:13px;color:var(--muted);font-weight:300}
+.divider{max-width:1100px;margin:24px auto 0;padding:0 48px}
+.divider hr{border:none;border-top:1px solid var(--border)}
+main{max-width:1100px;margin:0 auto;padding:40px 48px 80px}
+footer{text-align:center;padding:0 0 40px;font-size:12px;color:var(--muted);font-weight:300}
+.footer-links{display:flex;justify-content:center;gap:16px;margin-bottom:8px}
+.footer-link{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;transition:color .15s;text-decoration:underline;text-underline-offset:2px}
+.footer-link:hover{color:var(--accent)}
+
+/* ── PAGE TITLE ── */
+.page-title{margin-bottom:32px;animation:fadeUp .3s ease both}
+.page-title h1{font-family:'DM Serif Display',serif;font-size:36px;font-weight:400;letter-spacing:-.5px;margin-bottom:6px}
+.page-title p{font-size:14px;color:var(--muted);font-weight:300}
+
+/* ── STATS BAR ── */
+.stats-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 28px;display:flex;gap:40px;box-shadow:var(--shadow);flex-wrap:wrap;margin-bottom:20px;animation:fadeUp .35s ease both}
+.stat-item{display:flex;flex-direction:column;gap:4px}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.stat-value{font-family:'DM Serif Display',serif;font-size:22px}
+.stat-value.green{color:var(--accent)}
+.stat-value.warn{color:var(--warn)}
+.stat-value.amber{color:var(--amber)}
+.stat-divider{width:1px;background:var(--border);align-self:stretch}
+
+/* ── APPOINTMENT BANNER ── */
+.appt-banner{display:none;background:var(--surface);border:1.5px solid var(--amber);border-radius:var(--r);padding:16px 20px;margin-bottom:20px;animation:fadeUp .3s ease both}
+.appt-banner.show{display:block}
+.appt-banner-title{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:10px}
+.appt-items{display:flex;flex-direction:column;gap:8px}
+.appt-item{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px}
+.appt-item-left{display:flex;align-items:center;gap:8px}
+.appt-item-name{font-weight:500}
+.appt-item-date{font-size:12px;color:var(--muted)}
+.appt-urgency{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.appt-urgency.today{background:var(--warn-lt);color:var(--warn)}
+.appt-urgency.soon{background:var(--amber-lt);color:var(--amber)}
+.appt-urgency.upcoming{background:var(--accent-lt);color:var(--accent)}
+.btn-ics{font-size:11px;font-weight:500;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .13s;white-space:nowrap}
+.btn-ics:hover{background:var(--amber-lt);border-color:var(--amber);color:var(--amber)}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;animation:fadeUp .38s ease both}
+.section-label{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.toolbar-right{display:flex;gap:8px;align-items:center}
+.btn-add{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s,transform .1s}
+.btn-add:hover{background:#245032;transform:translateY(-1px)}
+.btn-manage{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:9px 14px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.btn-manage:hover{background:var(--bg);color:var(--text)}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:7px;margin-bottom:32px;flex-wrap:wrap;animation:fadeUp .4s ease both}
+.filter-btn{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 13px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.filter-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+.filter-btn.star-filter.active{background:var(--gold);border-color:var(--gold)}
+.filter-btn:not(.active):hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── CATEGORY SECTIONS ── */
+.cat-section{margin-bottom:40px}
+.cat-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.cat-icon{font-size:17px}
+.cat-label{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.cat-count{font-size:11px;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:20px}
+.cat-urgency{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.cat-urgency.has-overdue{background:var(--warn-lt);color:var(--warn)}
+.cat-urgency.has-soon{background:var(--amber-lt);color:var(--amber)}
+
+/* ── TASK GRID ── */
+.task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+
+/* ── TASK CARD ── */
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 20px 16px;display:flex;flex-direction:column;gap:13px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
+.task-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
+.task-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--stripe,var(--border))}
+.task-card.overdue{--stripe:var(--warn)}
+.task-card.due-soon{--stripe:var(--amber)}
+.task-card.ok{--stripe:var(--accent)}
+.task-card.appt-mode{--stripe:#7B5EA7}
+.task-card.starred-card{border-color:var(--gold);box-shadow:var(--shadow),0 0 0 1px var(--gold-lt)}
+
+.card-top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-top-left{display:flex;align-items:flex-start;gap:10px}
+.task-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.task-icon.overdue{background:var(--warn-lt)}
+.task-icon.due-soon{background:var(--amber-lt)}
+.task-icon.ok{background:var(--accent-lt)}
+.task-icon.appt{background:#EEE8F8}
+
+.card-actions{display:flex;gap:4px;flex-shrink:0}
+.icon-btn{width:27px;height:27px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .13s;font-family:'DM Sans',sans-serif;line-height:1}
+.icon-btn.star-btn{font-size:14px;border-color:transparent;background:transparent;color:#CCC}
+.icon-btn.star-btn.starred{color:var(--gold);background:var(--gold-lt);border-color:var(--gold)}
+.icon-btn.star-btn:hover{color:var(--gold);background:var(--gold-lt);border-color:var(--gold)}
+/* edit/delete only visible on hover */
+.icon-btn.edit-btn,.icon-btn.info-btn,.icon-btn.delete-btn{opacity:0;transition:opacity .15s,all .13s}
+.task-card:hover .icon-btn.edit-btn,
+.task-card:hover .icon-btn.info-btn,
+.task-card:hover .icon-btn.delete-btn{opacity:1}
+.icon-btn.info-btn:hover{background:var(--accent-lt);color:var(--accent);border-color:var(--accent)}
+.icon-btn.edit-btn:hover{background:var(--bg);color:var(--text)}
+.icon-btn.delete-btn:hover{background:var(--warn-lt);color:var(--warn);border-color:var(--warn)}
+
+.task-name{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400;letter-spacing:-.15px;line-height:1.25}
+.notes-hint{font-size:11px;color:var(--muted);font-family:'DM Sans',sans-serif;margin-left:5px}
+
+.task-meta{display:flex;flex-direction:column;gap:5px}
+.meta-row{display:flex;align-items:center;justify-content:space-between}
+.meta-key{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.meta-val{font-size:13px;font-weight:500}
+
+.status-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px}
+.status-pill.overdue{background:var(--warn-lt);color:var(--warn)}
+.status-pill.due-soon{background:var(--amber-lt);color:var(--amber)}
+.status-pill.ok{background:var(--accent-lt);color:var(--accent)}
+.status-pill.appt{background:#EEE8F8;color:#7B5EA7}
+.status-pill::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+
+.progress-wrap{height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-bar{height:100%;border-radius:4px;transition:width .4s}
+.progress-bar.overdue{background:var(--warn)}
+.progress-bar.due-soon{background:var(--amber)}
+.progress-bar.ok{background:var(--accent)}
+.progress-bar.appt{background:#7B5EA7}
+
+.btn-done{width:100%;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-done:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── MODALS BASE ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,23,20,.45);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-close-btn{background:var(--border);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text);transition:background .15s;font-family:'DM Sans',sans-serif;flex-shrink:0}
+.modal-close-btn:hover{background:var(--muted);color:#fff}
+.modal-header{padding:24px 28px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.modal-header h2{font-family:'DM Serif Display',serif;font-size:21px;font-weight:400}
+.modal-footer{padding:14px 28px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+
+/* ── FORM MODAL ── */
+.form-modal{background:var(--surface);border-radius:20px;max-width:460px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.18);animation:modalIn .22s ease}
+.modal-body{padding:20px 28px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
+.btn-primary{flex:1;background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:#245032}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:10px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{background:var(--bg);color:var(--text)}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.form-label .opt{font-weight:300;text-transform:none;letter-spacing:0;font-size:11px}
+.form-input,.form-textarea,.form-select{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;width:100%;-webkit-appearance:none}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,90,61,.1)}
+.form-textarea{resize:vertical;min-height:72px;line-height:1.55}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.emoji-picker{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.emoji-opt{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border);background:transparent;font-size:15px;cursor:pointer;transition:all .13s;display:flex;align-items:center;justify-content:center}
+.emoji-opt:hover,.emoji-opt.selected{background:var(--accent-lt);border-color:var(--accent)}
+
+.cycle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cycle-opt{padding:8px 4px;border-radius:10px;border:1.5px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .13s;text-align:center}
+.cycle-opt:hover,.cycle-opt.selected{background:var(--accent-lt);border-color:var(--accent);color:var(--accent)}
+
+.cat-pills{display:flex;flex-wrap:wrap;gap:6px}
+.cat-pill{padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .13s;display:flex;align-items:center;gap:5px}
+.cat-pill:hover,.cat-pill.selected{background:var(--accent-lt);border-color:var(--accent);color:var(--accent)}
+
+/* appointment toggle */
+.appt-toggle{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;user-select:none}
+.appt-toggle.on{border-color:#7B5EA7;background:#EEE8F8;color:#7B5EA7}
+.appt-toggle input{display:none}
+.toggle-indicator{width:36px;height:20px;border-radius:10px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0}
+.toggle-indicator::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.appt-toggle.on .toggle-indicator{background:#7B5EA7}
+.appt-toggle.on .toggle-indicator::after{transform:translateX(16px)}
+.appt-fields{display:flex;flex-direction:column;gap:12px;padding:14px;background:#EEE8F8;border-radius:12px;border:1px solid #D8CEEE}
+.appt-fields.hidden{display:none}
+
+/* ── DETAIL MODAL ── */
+.detail-modal{background:var(--surface);border-radius:20px;max-width:480px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.18);animation:modalIn .22s ease}
+.detail-header{padding:22px 28px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px;flex-shrink:0}
+.detail-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.detail-icon.overdue{background:var(--warn-lt)} .detail-icon.due-soon{background:var(--amber-lt)} .detail-icon.ok{background:var(--accent-lt)} .detail-icon.appt{background:#EEE8F8}
+.detail-title-block{flex:1;min-width:0}
+.detail-title{font-family:'DM Serif Display',serif;font-size:21px;font-weight:400;line-height:1.2;margin-bottom:5px}
+.detail-badges{display:flex;gap:5px;flex-wrap:wrap}
+.detail-badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px}
+.badge-cat{background:var(--border);color:var(--muted)}
+.badge-starred{background:var(--gold-lt);color:var(--gold)}
+.badge-status.overdue{background:var(--warn-lt);color:var(--warn)} .badge-status.due-soon{background:var(--amber-lt);color:var(--amber)} .badge-status.ok{background:var(--accent-lt);color:var(--accent)} .badge-status.appt{background:#EEE8F8;color:#7B5EA7}
+.detail-body{padding:20px 28px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:20px}
+.detail-section-title{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.detail-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.detail-stat{background:var(--bg);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:3px}
+.detail-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.detail-stat-val{font-family:'DM Serif Display',serif;font-size:15px}
+.progress-detail{display:flex;flex-direction:column;gap:5px}
+.progress-label-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.progress-track{height:6px;background:var(--border);border-radius:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:6px}
+.progress-fill.overdue{background:var(--warn)} .progress-fill.due-soon{background:var(--amber)} .progress-fill.ok{background:var(--accent)} .progress-fill.appt{background:#7B5EA7}
+.notes-display{background:var(--bg);border-radius:12px;padding:14px;font-size:13px;line-height:1.65;white-space:pre-wrap;min-height:48px}
+.notes-display.empty{color:var(--muted);font-style:italic}
+.history-list{display:flex;flex-direction:column;gap:5px}
+.history-item{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 11px;background:var(--bg);border-radius:8px}
+.history-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.history-date{flex:1} .history-ago{font-size:11px;color:var(--muted)}
+.history-empty{font-size:13px;color:var(--muted);font-style:italic}
+.appt-info-box{background:#EEE8F8;border:1px solid #D8CEEE;border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.appt-info-label{font-size:12px;color:#7B5EA7;font-weight:500}
+.appt-info-date{font-family:'DM Serif Display',serif;font-size:16px;color:#5B3E8C}
+.detail-footer{padding:14px 28px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.btn-detail-done{flex:1;background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-detail-done:hover{background:#245032}
+.btn-detail-edit{background:transparent;border:1px solid var(--border);color:var(--muted);padding:10px 16px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-detail-edit:hover{background:var(--bg);color:var(--text)}
+
+/* ── MANAGE MODAL ── */
+.manage-modal{background:var(--surface);border-radius:20px;max-width:500px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.18);animation:modalIn .22s ease}
+.manage-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0}
+.manage-tab{flex:1;padding:14px;background:none;border:none;border-bottom:2px solid transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;margin-bottom:-1px}
+.manage-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.manage-body{padding:20px 28px;overflow-y:auto;flex:1}
+
+/* categories management */
+.cat-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.cat-list-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.cat-list-item.built-in .cat-list-icon{opacity:.6}
+.cat-list-icon{font-size:18px}
+.cat-list-name{flex:1;font-size:14px;font-weight:500}
+.cat-list-badge{font-size:10px;color:var(--muted);background:var(--border);padding:2px 7px;border-radius:20px}
+.btn-cat-delete{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;border-radius:6px;transition:all .13s;font-family:'DM Sans',sans-serif}
+.btn-cat-delete:hover{background:var(--warn-lt);color:var(--warn)}
+.add-cat-row{display:flex;gap:8px;align-items:center;margin-top:4px}
+.add-cat-emoji{width:42px;height:42px;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .13s}
+.add-cat-emoji:hover{border-color:var(--accent);background:var(--accent-lt)}
+.add-cat-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .15s}
+.add-cat-input:focus{border-color:var(--accent)}
+.btn-cat-add{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .15s}
+.btn-cat-add:hover{background:#245032}
+
+/* mini emoji picker for category */
+.mini-emoji-picker{position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;box-shadow:var(--shadow-hover);z-index:200;display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:280px}
+.mini-emoji-picker .emoji-opt{width:32px;height:32px;font-size:14px}
+
+/* archive */
+.archive-list{display:flex;flex-direction:column;gap:8px}
+.archive-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.archive-item-icon{font-size:18px;flex-shrink:0}
+.archive-item-info{flex:1;min-width:0}
+.archive-item-name{font-size:14px;font-weight:500}
+.archive-item-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.btn-restore{background:var(--accent-lt);color:var(--accent);border:1px solid var(--accent);padding:5px 12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .13s;white-space:nowrap}
+.btn-restore:hover{background:var(--accent);color:#fff}
+.btn-perm-delete{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:5px;border-radius:6px;transition:all .13s}
+.btn-perm-delete:hover{color:var(--warn)}
+.archive-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+
+@keyframes modalIn{from{transform:translateY(12px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes doneFlash{0%{background:var(--accent-lt)}100%{background:var(--surface)}}
+.task-card.just-done{animation:doneFlash .7s ease both}
+
+@media(max-width:600px){
+  header,.divider,main{padding-left:20px;padding-right:20px}
+  header{flex-direction:column;align-items:flex-start;gap:8px}
+  .header-right{text-align:left}
+  .stats-bar{gap:20px} .stat-divider{display:none}
+  .task-grid{grid-template-columns:1fr}
+  .icon-btn.edit-btn,.icon-btn.info-btn,.icon-btn.delete-btn{opacity:1}
+  .detail-stats{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><a href="hub.html">My<span>OS</span></a></div>
+  <div class="header-right">
+    <a href="hub.html" class="back-link">← Hub</a>
+    <div id="date-display">—</div>
+  </div>
+</header>
+<div class="divider"><hr></div>
+
+<main>
+  <div class="page-title">
+    <h1>Reservoir</h1>
+    <p>Log it once. Know when it's due.</p>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">—</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-label">Overdue</div><div class="stat-value warn" id="stat-overdue">—</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-label">Due soon</div><div class="stat-value amber" id="stat-soon">—</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-label">On track</div><div class="stat-value green" id="stat-ok">—</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-label">Most urgent</div><div class="stat-value" id="stat-next" style="font-size:14px;padding-top:4px">—</div></div>
+  </div>
+
+  <!-- APPOINTMENT BANNER -->
+  <div class="appt-banner" id="appt-banner">
+    <div class="appt-banner-title">📅 Upcoming appointments</div>
+    <div class="appt-items" id="appt-items"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="section-label">Cycles</div>
+    <div class="toolbar-right">
+      <button class="btn-manage" onclick="openManage()">⚙ Manage</button>
+      <button class="btn-add" onclick="openAddModal()">＋ Add task</button>
+    </div>
+  </div>
+
+  <div class="filter-bar" id="filter-bar"></div>
+  <div id="content"></div>
+</main>
+
+<footer>
+  <div class="footer-links">
+    <button class="footer-link" onclick="openManage('archive')">🗄 Archive</button>
+    <button class="footer-link" onclick="requestNotifPermission()">🔔 Enable notifications</button>
+  </div>
+  MyOS · Reservoir v3.0
+</footer>
+
+<!-- ══ FORM MODAL ══ -->
+<div class="modal-overlay" id="form-overlay" onclick="ovClick(event,'form-overlay')">
+  <div class="form-modal">
+    <div class="modal-header">
+      <h2 id="form-title">Add task</h2>
+      <button class="modal-close-btn" onclick="closeModal('form-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <div class="form-label">Icon</div>
+        <div class="emoji-picker" id="emoji-picker"></div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Task name</div>
+        <input class="form-input" id="input-name" type="text" placeholder="e.g. Vacuum the floor" maxlength="50">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Category</div>
+        <div class="cat-pills" id="cat-pills"></div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Cycle — how often?</div>
+        <div class="cycle-grid" id="cycle-presets"></div>
+        <div class="form-row" style="margin-top:8px">
+          <div class="form-group">
+            <div class="form-label">Custom days</div>
+            <input class="form-input" id="input-days" type="number" min="1" max="730" placeholder="e.g. 30">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Last done</div>
+            <input class="form-input" id="input-date" type="date">
+          </div>
+        </div>
+      </div>
+      <!-- Appointment toggle -->
+      <div class="form-group">
+        <div class="form-label">Appointment</div>
+        <label class="appt-toggle" id="appt-toggle-label" onclick="toggleAppt()">
+          <div class="toggle-indicator" id="appt-indicator"></div>
+          <span id="appt-toggle-text">This task needs a scheduled appointment</span>
+        </label>
+        <div class="appt-fields hidden" id="appt-fields">
+          <div class="form-group">
+            <div class="form-label">Appointment date</div>
+            <input class="form-input" id="input-appt-date" type="date">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Notes <span class="opt">(location, time, what to bring)</span></div>
+            <input class="form-input" id="input-appt-notes" type="text" placeholder="e.g. Dr. Smith, Level 3, bring Medicare card">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Instructions <span class="opt">(optional)</span></div>
+        <textarea class="form-textarea" id="input-notes" placeholder="How-to steps, tips, anything useful for when you do this task..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('form-overlay')">Cancel</button>
+      <button class="btn-primary" onclick="saveTask()">Save task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DETAIL MODAL ══ -->
+<div class="modal-overlay" id="detail-overlay" onclick="ovClick(event,'detail-overlay')">
+  <div class="detail-modal">
+    <div class="detail-header">
+      <div class="detail-icon" id="d-icon"></div>
+      <div class="detail-title-block">
+        <div class="detail-title" id="d-title"></div>
+        <div class="detail-badges" id="d-badges"></div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('detail-overlay')">✕</button>
+    </div>
+    <div class="detail-body">
+      <div id="d-appt-box" style="display:none">
+        <div class="detail-section-title">Appointment</div>
+        <div class="appt-info-box">
+          <div><div class="appt-info-label">📅 Scheduled for</div><div class="appt-info-date" id="d-appt-date"></div></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="d-appt-urgency" class="appt-urgency"></span>
+            <button class="btn-ics" id="d-ics-btn" onclick="downloadICS()">⬇ .ics</button>
+          </div>
+        </div>
+        <div id="d-appt-notes-row" style="display:none;margin-top:8px;font-size:13px;color:var(--muted)"></div>
+      </div>
+      <div>
+        <div class="detail-section-title">Status</div>
+        <div class="detail-stats" id="d-stats"></div>
+        <div class="progress-detail" style="margin-top:10px">
+          <div class="progress-label-row"><span id="d-prog-left"></span><span id="d-prog-right"></span></div>
+          <div class="progress-track"><div class="progress-fill" id="d-prog-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="detail-section-title">Instructions & notes</div>
+        <div class="notes-display" id="d-notes"></div>
+      </div>
+      <div>
+        <div class="detail-section-title">Log history</div>
+        <div class="history-list" id="d-history"></div>
+      </div>
+    </div>
+    <div class="detail-footer">
+      <button class="btn-detail-edit" onclick="editFromDetail()">✎ Edit</button>
+      <button class="btn-detail-done" onclick="doneFromDetail()">✓ Mark done today</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MANAGE MODAL ══ -->
+<div class="modal-overlay" id="manage-overlay" onclick="ovClick(event,'manage-overlay')">
+  <div class="manage-modal">
+    <div class="modal-header">
+      <h2>Manage</h2>
+      <button class="modal-close-btn" onclick="closeModal('manage-overlay')">✕</button>
+    </div>
+    <div class="manage-tabs">
+      <button class="manage-tab active" id="mtab-cats" onclick="setManageTab('cats')">Categories</button>
+      <button class="manage-tab" id="mtab-archive" onclick="setManageTab('archive')">Archive <span id="archive-count-badge" style="background:var(--border);padding:1px 7px;border-radius:20px;font-size:11px;margin-left:4px">0</span></button>
+    </div>
+    <div class="manage-body" id="manage-body"></div>
+  </div>
+</div>
+
+<!-- mini emoji picker (shared, portal) -->
+<div class="mini-emoji-picker" id="mini-emoji-picker" style="display:none"></div>
+
+<script>
+// ── STORAGE KEYS ──────────────────────────────────────────────────────────────
+const SK_TASKS    = 'reservoir_tasks_v3';
+const SK_CATS     = 'reservoir_custom_cats_v3';
+const SK_ARCHIVE  = 'reservoir_archive_v3';
+const SK_APPTS    = 'reservoir_appointments_v3'; // read by hub
+
+// ── BUILT-IN CATEGORIES ───────────────────────────────────────────────────────
+const BUILTIN_CATS = [
+  {id:'household', label:'Household',    icon:'🏠', builtIn:true},
+  {id:'laundry',   label:'Laundry',      icon:'🧺', builtIn:true},
+  {id:'car',       label:'Car',          icon:'🚗', builtIn:true},
+  {id:'personal',  label:'Personal Care',icon:'🪥', builtIn:true},
+  {id:'other',     label:'Other',        icon:'📦', builtIn:true},
+];
+
+const EMOJIS = ['🏠','🧹','🛁','🪟','🧽','💡','🔧','🪴','🧺','👕','🛏️','🚗','⛽','🔑','🛞','🪥','💊','✂️','🧴','💈','📦','🗑️','🌿','🐾','🔔','📅','⚕️','🦷','💉','🏥','👟','🎽','📖','💻','🍽️','🐟'];
+
+const CYCLE_PRESETS = [
+  {label:'2 days',days:2},{label:'3 days',days:3},{label:'Weekly',days:7},
+  {label:'2 weeks',days:14},{label:'Monthly',days:30},{label:'3 months',days:90},
+];
+
+function uid(){ return '_'+Math.random().toString(36).slice(2,9); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+function daysBetween(ds){ const now=new Date(); now.setHours(0,0,0,0); return Math.round((now-new Date(ds+'T00:00:00'))/86400000); }
+function daysUntil(ds){ return -daysBetween(ds); }
+function fmtDate(ds){ return new Date(ds+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let tasks=[], customCats=[], archive=[];
+let selEmoji=EMOJIS[0], selCat='household', selDays=7, selAppt=false;
+let editingId=null, detailId=null, currentFilter='all';
+let manageTab='cats', newCatEmoji='🏷️';
+
+function allCats(){ return [...BUILTIN_CATS,...customCats]; }
+function getCat(id){ return allCats().find(c=>c.id===id)||BUILTIN_CATS[BUILTIN_CATS.length-1]; }
+function getStatus(t){
+  if(t.isAppt&&t.apptDate){
+    const until=daysUntil(t.apptDate);
+    if(until<0)  return{key:'appt',label:'Appointment passed',rem:until};
+    if(until===0)return{key:'appt',label:'Appointment today!',rem:0};
+    if(until<=7) return{key:'appt',label:'Appt in '+until+'d',rem:until};
+    return            {key:'appt',label:'Appt '+fmtDate(t.apptDate),rem:until};
+  }
+  const since=t.lastDone?daysBetween(t.lastDone):t.days+1;
+  const rem=t.days-since;
+  if(rem<0)  return{key:'overdue', label:'Overdue '+Math.abs(rem)+'d',rem};
+  if(rem<=2) return{key:'due-soon',label:rem===0?'Due today':'Due in '+rem+'d',rem};
+  return          {key:'ok',       label:'Due in '+rem+'d',rem};
+}
+function getProgress(t){
+  if(t.isAppt&&t.apptDate){
+    const total=t.lastDone?daysBetween(t.lastDone)+(daysUntil(t.apptDate)||1):90;
+    return Math.min(1,Math.max(0,(t.lastDone?daysBetween(t.lastDone):0)/total));
+  }
+  return Math.min(1,(t.lastDone?daysBetween(t.lastDone):t.days)/t.days);
+}
+
+// ── DEFAULT TASKS ─────────────────────────────────────────────────────────────
+const DEFAULT_TASKS=[
+  {id:uid(),cat:'household',emoji:'🧹',name:'Vacuum',           days:7, lastDone:daysAgo(9), starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Cover all rooms. Start far end, work toward the door. Get under the bed and around chair legs. Empty the dustbin if full.'},
+  {id:uid(),cat:'household',emoji:'🛏️',name:'Change bedsheets', days:7, lastDone:daysAgo(8), starred:true, isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Strip fitted sheet, pillowcases, and duvet cover. Wash on 40°C. While it runs, wipe down the mattress with a slightly damp cloth and leave to air.'},
+  {id:uid(),cat:'household',emoji:'🛁',name:'Deep clean',        days:14,lastDone:daysAgo(5), starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Bathroom: scrub toilet bowl and under the rim, wipe seat, clean sink and tap, scrub shower/bath. Kitchen: wipe stove, microwave inside and out, benchtops. Mop floors last.'},
+  {id:uid(),cat:'household',emoji:'🪟',name:'Wipe surfaces',     days:7, lastDone:daysAgo(3), starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Benchtops, windowsills, light switches, door handles. A damp cloth is fine — skip heavy cleaner unless visibly dirty.'},
+  {id:uid(),cat:'laundry',  emoji:'🧺',name:'Laundry',           days:4, lastDone:daysAgo(3), starred:true, isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'30°C for most clothes. 40°C for underwear, socks, towels. Don\'t overfill. Hang immediately after cycle to avoid musty smell and creasing.'},
+  {id:uid(),cat:'laundry',  emoji:'👕',name:'Dry & fold',         days:5, lastDone:daysAgo(6), starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Fold while warm for fewer wrinkles. Hang work shirts straight from the wash. Pair socks before putting away.'},
+  {id:uid(),cat:'car',      emoji:'⛽',name:'Fuel up',            days:7, lastDone:daysAgo(5), starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Don\'t let it drop below a quarter tank. Costco or Coles Express usually have best prices. Keep receipt if tracking spending.'},
+  {id:uid(),cat:'car',      emoji:'🚗',name:'Car service',        days:180,lastDone:daysAgo(60),starred:false,isAppt:true,apptDate:'',apptNotes:'Local mechanic on Church St — call ahead. Roughly every 6 months or 10,000 km.',history:[],notes:'Ask for oil, oil filter, and a general check-over. Keep the invoice. Local mechanic usually 30-40% cheaper than a dealer.'},
+  {id:uid(),cat:'car',      emoji:'🛞',name:'Check tyre pressure', days:30,lastDone:daysAgo(20),starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Check cold (not straight after driving). PSI sticker is inside the driver door — usually 32–35 PSI for a small hatch. Most petrol stations have a free air pump.'},
+  {id:uid(),cat:'personal', emoji:'✂️',name:'Haircut',            days:28,lastDone:daysAgo(14),starred:false,isAppt:true,apptDate:'',apptNotes:'Regular barber — book 2-3 days ahead.',history:[],notes:'Every 4 weeks. Keep a note of what you asked for so you can repeat it.'},
+  {id:uid(),cat:'personal', emoji:'🪥',name:'Replace toothbrush', days:90,lastDone:daysAgo(20),starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Every 3 months, or sooner if bristles fray. Electric brush heads count too. Keep a spare under the sink.'},
+  {id:uid(),cat:'personal', emoji:'💊',name:'Clip nails',         days:10,lastDone:daysAgo(8), starred:false,isAppt:false,apptDate:'',apptNotes:'',history:[],notes:'Hands and feet. Best after a shower when nails are softer. Clip fingernails with a slight curve; toenails straight across to avoid ingrown nails.'},
+  {id:uid(),cat:'personal', emoji:'🦷',name:'Dental check-up',   days:180,lastDone:daysAgo(60),starred:true, isAppt:true,apptDate:'',apptNotes:'Bring Medicare card and HCF card. 30 min appointment.',history:[],notes:'Every 6 months. Book ahead — good dentists fill up fast. Includes clean and check. If overdue don\'t stress, just book — they\'ve seen everything.'},
+];
+
+// ── PERSISTENCE ───────────────────────────────────────────────────────────────
+function load(){
+  try{ tasks=JSON.parse(localStorage.getItem(SK_TASKS))||null; }catch(e){tasks=null;}
+  if(!tasks){ tasks=DEFAULT_TASKS; save(); }
+  // migrate old data
+  tasks.forEach(t=>{
+    if(!t.history)t.history=[];
+    if(t.notes==null)t.notes='';
+    if(t.starred==null)t.starred=false;
+    if(t.isAppt==null)t.isAppt=false;
+    if(!t.apptDate)t.apptDate='';
+    if(!t.apptNotes)t.apptNotes='';
+  });
+  try{ customCats=JSON.parse(localStorage.getItem(SK_CATS))||[]; }catch(e){customCats=[];}
+  try{ archive=JSON.parse(localStorage.getItem(SK_ARCHIVE))||[]; }catch(e){archive=[];}
+}
+function save(){
+  localStorage.setItem(SK_TASKS,JSON.stringify(tasks));
+  localStorage.setItem(SK_CATS,JSON.stringify(customCats));
+  localStorage.setItem(SK_ARCHIVE,JSON.stringify(archive));
+  // write appointments for hub
+  const appts=tasks.filter(t=>t.isAppt&&t.apptDate).map(t=>({id:t.id,name:t.name,emoji:t.emoji,date:t.apptDate,notes:t.apptNotes}));
+  localStorage.setItem(SK_APPTS,JSON.stringify(appts));
+}
+
+// ── APPOINTMENT BANNER ────────────────────────────────────────────────────────
+function renderApptBanner(){
+  const upcoming=tasks.filter(t=>t.isAppt&&t.apptDate).map(t=>{
+    const until=daysUntil(t.apptDate);
+    return{...t,until};
+  }).filter(t=>t.until>=-1&&t.until<=30).sort((a,b)=>a.until-b.until);
+
+  const banner=document.getElementById('appt-banner');
+  if(upcoming.length===0){ banner.classList.remove('show'); return; }
+  banner.classList.add('show');
+
+  document.getElementById('appt-items').innerHTML=upcoming.map(t=>{
+    const u=t.until;
+    const urgClass=u<0?'today':u<=3?'soon':'upcoming';
+    const urgLabel=u<0?'Passed':u===0?'Today':u===1?'Tomorrow':'In '+u+'d';
+    return `<div class="appt-item">
+      <div class="appt-item-left">
+        <span>${t.emoji}</span>
+        <span class="appt-item-name">${esc(t.name)}</span>
+        <span class="appt-item-date">${fmtDate(t.apptDate)}</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="appt-urgency ${urgClass}">${urgLabel}</span>
+        <button class="btn-ics" onclick="downloadICSForTask('${t.id}')">⬇ .ics</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function buildFilterBar(){
+  const cats=allCats().filter(c=>tasks.some(t=>t.cat===c.id));
+  document.getElementById('filter-bar').innerHTML=[
+    `<button class="filter-btn${currentFilter==='all'?' active':''}" onclick="setFilter('all')">All</button>`,
+    `<button class="filter-btn star-filter${currentFilter==='starred'?' active':''}" onclick="setFilter('starred')">⭐ Starred</button>`,
+    `<button class="filter-btn${currentFilter==='overdue'?' active':''}" onclick="setFilter('overdue')">Overdue</button>`,
+    `<button class="filter-btn${currentFilter==='due-soon'?' active':''}" onclick="setFilter('due-soon')">Due soon</button>`,
+    ...cats.map(c=>`<button class="filter-btn${currentFilter===c.id?' active':''}" onclick="setFilter('${c.id}')">${c.icon} ${c.label}</button>`)
+  ].join('');
+}
+
+function render(){
+  updateStats();
+  renderApptBanner();
+  buildFilterBar();
+
+  let catsToShow;
+  if(['all','overdue','due-soon','starred'].includes(currentFilter)){
+    catsToShow=allCats().filter(c=>tasks.some(t=>t.cat===c.id));
+  } else {
+    catsToShow=allCats().filter(c=>c.id===currentFilter);
+  }
+
+  let html='';
+  catsToShow.forEach((cat,ci)=>{
+    let catTasks=tasks.filter(t=>t.cat===cat.id);
+    if(currentFilter==='overdue')    catTasks=catTasks.filter(t=>getStatus(t).key==='overdue');
+    else if(currentFilter==='due-soon') catTasks=catTasks.filter(t=>getStatus(t).key==='due-soon');
+    else if(currentFilter==='starred')  catTasks=catTasks.filter(t=>t.starred);
+    if(catTasks.length===0) return;
+
+    // sort: starred first, then by urgency
+    const ord={overdue:0,'due-soon':1,appt:2,ok:3};
+    catTasks.sort((a,b)=>{
+      if(a.starred!==b.starred) return a.starred?-1:1;
+      const sa=getStatus(a),sb=getStatus(b);
+      if(ord[sa.key]!==ord[sb.key]) return ord[sa.key]-ord[sb.key];
+      return sa.rem-sb.rem;
+    });
+
+    const anyOv=catTasks.some(t=>getStatus(t).key==='overdue');
+    const anySn=!anyOv&&catTasks.some(t=>getStatus(t).key==='due-soon');
+    const urg=anyOv?`<span class="cat-urgency has-overdue">⚠ Overdue</span>`:anySn?`<span class="cat-urgency has-soon">Soon</span>`:'';
+
+    html+=`<div class="cat-section" style="animation:fadeUp .4s ease ${ci*0.05}s both">
+      <div class="cat-header">
+        <span class="cat-icon">${cat.icon}</span>
+        <span class="cat-label">${cat.label}</span>
+        <span class="cat-count">${catTasks.length}</span>
+        ${urg}
+      </div>
+      <div class="task-grid">${catTasks.map((t,i)=>renderCard(t,i)).join('')}</div>
+    </div>`;
+  });
+
+  if(!html) html=`<div style="text-align:center;padding:80px 20px;animation:fadeUp .4s ease both"><div style="font-size:36px;margin-bottom:14px">🌿</div><div style="font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;margin-bottom:6px">Nothing here</div><div style="font-size:13px;color:var(--muted)">No tasks match this filter.</div></div>`;
+  document.getElementById('content').innerHTML=html;
+}
+
+function renderCard(t,i){
+  const s=getStatus(t);
+  const prog=getProgress(t);
+  const since=t.lastDone?daysBetween(t.lastDone):null;
+  const sl=since===null?'Never':since===0?'Today':since===1?'Yesterday':since+'d ago';
+  const cl=t.days===1?'Daily':t.days===7?'Weekly':t.days===14?'Fortnightly':t.days===30?'Monthly':t.days+'d';
+  const hasNotes=t.notes&&t.notes.trim();
+  const iconClass=t.isAppt?'appt':s.key;
+  const starClass=t.starred?'starred':'';
+  return `<div class="task-card ${s.key}${t.starred?' starred-card':''}${t.isAppt?' appt-mode':''}" style="animation:fadeUp .4s ease ${i*0.04}s both" id="card-${t.id}">
+    <div class="card-top-row">
+      <div class="card-top-left">
+        <div class="task-icon ${iconClass}">${t.emoji}</div>
+      </div>
+      <div class="card-actions">
+        <button class="icon-btn star-btn${t.starred?' starred':''}" onclick="toggleStar('${t.id}')" title="${t.starred?'Unpin':'Pin'}">⭐</button>
+        <button class="icon-btn info-btn" onclick="openDetail('${t.id}')" title="Info">ℹ</button>
+        <button class="icon-btn edit-btn" onclick="openEditModal('${t.id}')" title="Edit">✎</button>
+        <button class="icon-btn delete-btn" onclick="softDelete('${t.id}')" title="Archive">🗄</button>
+      </div>
+    </div>
+    <div class="task-name">${esc(t.name)}${hasNotes?'<span class="notes-hint">📝</span>':''}</div>
+    <div class="task-meta">
+      <div class="meta-row"><span class="meta-key">Last done</span><span class="meta-val">${sl}</span></div>
+      <div class="meta-row"><span class="meta-key">${t.isAppt&&t.apptDate?'Appointment':'Cycle'}</span><span class="meta-val">${t.isAppt&&t.apptDate?fmtDate(t.apptDate):cl}</span></div>
+      <div class="meta-row" style="margin-top:2px"><span class="status-pill ${s.key}">${s.label}</span></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar ${t.isAppt?'appt':s.key}" style="width:${Math.round(prog*100)}%"></div></div>
+    <button class="btn-done" onclick="markDone('${t.id}')">✓ Mark done today</button>
+  </div>`;
+}
+
+function updateStats(){
+  let ov=0,sn=0,ok=0,urg=null,urgRem=Infinity;
+  tasks.forEach(t=>{
+    const s=getStatus(t);
+    if(s.key==='overdue'){ov++;if(s.rem<urgRem){urgRem=s.rem;urg=t;}}
+    else if(s.key==='due-soon'){sn++;if(!urg&&s.rem<urgRem){urgRem=s.rem;urg=t;}}
+    else ok++;
+  });
+  document.getElementById('stat-total').textContent=tasks.length;
+  document.getElementById('stat-overdue').textContent=ov||'0';
+  document.getElementById('stat-soon').textContent=sn||'0';
+  document.getElementById('stat-ok').textContent=ok||'0';
+  if(urg){ const s=getStatus(urg); document.getElementById('stat-next').textContent=urg.emoji+' '+urg.name+(s.rem<0?' (overdue)':s.rem===0?' — today':s.rem===1?' — tomorrow':' — '+s.rem+'d'); }
+  else document.getElementById('stat-next').textContent='✓ All on track';
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function setFilter(key){ currentFilter=key; render(); }
+
+function toggleStar(id){
+  const t=tasks.find(x=>x.id===id); if(!t)return;
+  t.starred=!t.starred; save(); render();
+}
+
+function markDone(id){
+  const t=tasks.find(x=>x.id===id); if(!t)return;
+  if(!t.history)t.history=[];
+  if(t.lastDone)t.history.unshift(t.lastDone);
+  t.history=t.history.slice(0,5);
+  t.lastDone=todayStr();
+  if(t.isAppt)t.apptDate=''; // clear appointment once done
+  save(); render();
+  const card=document.getElementById('card-'+id);
+  if(card){card.classList.add('just-done');setTimeout(()=>card.classList.remove('just-done'),700);}
+}
+
+function softDelete(id){
+  const t=tasks.find(x=>x.id===id); if(!t)return;
+  archive.unshift({...t, archivedAt:todayStr()});
+  tasks=tasks.filter(x=>x.id!==id);
+  save(); render();
+}
+
+// ── ICS EXPORT ────────────────────────────────────────────────────────────────
+function icsDate(ds){ return ds.replace(/-/g,''); }
+function makeICS(name,ds,notes){
+  const d=icsDate(ds);
+  return `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MyOS Reservoir//EN\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:${d}\r\nDTEND;VALUE=DATE:${d}\r\nSUMMARY:${name}\r\nDESCRIPTION:${(notes||'').replace(/\n/g,'\\n')}\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+}
+function downloadICS(){
+  const t=tasks.find(x=>x.id===detailId); if(!t||!t.apptDate)return;
+  triggerICS(t.name,t.apptDate,t.apptNotes);
+}
+function downloadICSForTask(id){
+  const t=tasks.find(x=>x.id===id); if(!t||!t.apptDate)return;
+  triggerICS(t.name,t.apptDate,t.apptNotes);
+}
+function triggerICS(name,date,notes){
+  const blob=new Blob([makeICS(name,date,notes)],{type:'text/calendar'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=name.replace(/\s+/g,'_')+'.ics';
+  a.click();
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
+function requestNotifPermission(){
+  if(!('Notification' in window)){alert('Your browser doesn\'t support notifications.');return;}
+  Notification.requestPermission().then(p=>{
+    if(p==='granted') checkNotifications(true);
+    else alert('Notifications blocked. You can enable them in your browser settings.');
+  });
+}
+function checkNotifications(announce){
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  const due=tasks.filter(t=>t.isAppt&&t.apptDate).map(t=>({...t,until:daysUntil(t.apptDate)})).filter(t=>t.until>=0&&t.until<=3);
+  if(due.length===0&&!announce) return;
+  if(due.length===0){new Notification('Reservoir — MyOS',{body:'No appointments in the next 3 days. All clear!',icon:''});return;}
+  due.forEach(t=>{
+    const label=t.until===0?'is today!':t.until===1?'is tomorrow':'is in '+t.until+' days';
+    new Notification(t.emoji+' '+t.name,{body:'Your appointment '+label+' — '+fmtDate(t.apptDate)});
+  });
+}
+
+// ── DETAIL MODAL ──────────────────────────────────────────────────────────────
+function openDetail(id){
+  const t=tasks.find(x=>x.id===id); if(!t)return;
+  detailId=id;
+  const s=getStatus(t), cat=getCat(t.cat), prog=getProgress(t);
+  const since=t.lastDone?daysBetween(t.lastDone):null;
+  const sl=since===null?'Never':since===0?'Today':since===1?'Yesterday':since+'d ago';
+  const cl=t.days===1?'Daily':t.days===7?'Weekly':t.days===14?'Fortnightly':t.days===30?'Monthly':t.days+' days';
+
+  document.getElementById('d-icon').className='detail-icon '+(t.isAppt?'appt':s.key);
+  document.getElementById('d-icon').textContent=t.emoji;
+  document.getElementById('d-title').textContent=t.name;
+
+  let badges=`<span class="detail-badge badge-cat">${cat.icon} ${cat.label}</span>`;
+  if(t.starred) badges+=`<span class="detail-badge badge-starred">⭐ Pinned</span>`;
+  badges+=`<span class="detail-badge badge-status ${t.isAppt?'appt':s.key}">${s.label}</span>`;
+  document.getElementById('d-badges').innerHTML=badges;
+
+  // appointment box
+  const apptBox=document.getElementById('d-appt-box');
+  if(t.isAppt&&t.apptDate){
+    apptBox.style.display='block';
+    document.getElementById('d-appt-date').textContent=fmtDate(t.apptDate);
+    const until=daysUntil(t.apptDate);
+    const urgEl=document.getElementById('d-appt-urgency');
+    urgEl.className='appt-urgency '+(until<0?'today':until<=3?'soon':'upcoming');
+    urgEl.textContent=until<0?'Passed':until===0?'Today!':until===1?'Tomorrow':'In '+until+'d';
+    const notesRow=document.getElementById('d-appt-notes-row');
+    if(t.apptNotes){ notesRow.style.display='block'; notesRow.textContent='📌 '+t.apptNotes; }
+    else notesRow.style.display='none';
+  } else {
+    apptBox.style.display='none';
+  }
+
+  // stats
+  document.getElementById('d-stats').innerHTML=`
+    <div class="detail-stat"><div class="detail-stat-label">Last done</div><div class="detail-stat-val">${sl}</div></div>
+    <div class="detail-stat"><div class="detail-stat-label">Cycle</div><div class="detail-stat-val">${cl}</div></div>
+    <div class="detail-stat"><div class="detail-stat-label">Date</div><div class="detail-stat-val" style="font-size:11px;padding-top:3px">${t.lastDone?fmtDate(t.lastDone):'—'}</div></div>`;
+
+  const pb=document.getElementById('d-prog-bar');
+  pb.className='progress-fill '+(t.isAppt?'appt':s.key);
+  pb.style.width=Math.round(prog*100)+'%';
+  document.getElementById('d-prog-left').textContent=t.lastDone?fmtDate(t.lastDone):'Never done';
+  const due=t.lastDone?new Date(new Date(t.lastDone+'T00:00:00').getTime()+t.days*86400000):null;
+  document.getElementById('d-prog-right').textContent=due?fmtDate(due.toISOString().slice(0,10)):'—';
+
+  const notesEl=document.getElementById('d-notes');
+  if(t.notes&&t.notes.trim()){notesEl.textContent=t.notes;notesEl.classList.remove('empty');}
+  else{notesEl.textContent='No instructions added. Hit Edit to add some.';notesEl.classList.add('empty');}
+
+  const hist=document.getElementById('d-history');
+  const all=t.history||[];
+  hist.innerHTML=all.length===0?'<div class="history-empty">No previous log entries yet.</div>'
+    :all.map(ds=>{const ago=daysBetween(ds);const al=ago===0?'Today':ago===1?'Yesterday':ago+'d ago';return`<div class="history-item"><div class="history-dot"></div><div class="history-date">${fmtDate(ds)}</div><div class="history-ago">${al}</div></div>`;}).join('');
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+function doneFromDetail(){ if(detailId){markDone(detailId);openDetail(detailId);} }
+function editFromDetail(){ closeModal('detail-overlay'); openEditModal(detailId); }
+
+// ── FORM MODAL ────────────────────────────────────────────────────────────────
+let apptOn=false;
+function toggleAppt(){
+  apptOn=!apptOn;
+  const lbl=document.getElementById('appt-toggle-label');
+  const fields=document.getElementById('appt-fields');
+  lbl.classList.toggle('on',apptOn);
+  fields.classList.toggle('hidden',!apptOn);
+}
+function setApptState(on){
+  apptOn=on;
+  document.getElementById('appt-toggle-label').classList.toggle('on',on);
+  document.getElementById('appt-fields').classList.toggle('hidden',!on);
+}
+
+function buildEmojiPicker(){
+  document.getElementById('emoji-picker').innerHTML=EMOJIS.map(e=>`<button class="emoji-opt${e===selEmoji?' selected':''}" onclick="pickEmoji('${e}',this)">${e}</button>`).join('');
+}
+function buildCatPills(){
+  document.getElementById('cat-pills').innerHTML=allCats().map(c=>`<button class="cat-pill${c.id===selCat?' selected':''}" onclick="pickCat('${c.id}',this)">${c.icon} ${c.label}</button>`).join('');
+}
+function buildCyclePresets(){
+  document.getElementById('cycle-presets').innerHTML=CYCLE_PRESETS.map(p=>`<button class="cycle-opt${p.days===selDays?' selected':''}" onclick="pickCycle(${p.days},this)">${p.label}</button>`).join('');
+}
+function pickEmoji(e,btn){ selEmoji=e; document.querySelectorAll('.emoji-opt').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); }
+function pickCat(id,btn){ selCat=id; document.querySelectorAll('.cat-pill').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); }
+function pickCycle(days,btn){ selDays=days; document.getElementById('input-days').value=days; document.querySelectorAll('.cycle-opt').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); }
+
+function openAddModal(){
+  editingId=null; selEmoji=EMOJIS[0]; selCat='household'; selDays=7;
+  document.getElementById('form-title').textContent='Add task';
+  document.getElementById('input-name').value='';
+  document.getElementById('input-days').value=7;
+  document.getElementById('input-date').value=todayStr();
+  document.getElementById('input-notes').value='';
+  document.getElementById('input-appt-date').value='';
+  document.getElementById('input-appt-notes').value='';
+  setApptState(false);
+  buildEmojiPicker(); buildCatPills(); buildCyclePresets();
+  document.getElementById('form-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('input-name').focus(),60);
+}
+function openEditModal(id){
+  const t=tasks.find(x=>x.id===id); if(!t)return;
+  editingId=id; selEmoji=t.emoji; selCat=t.cat||'household'; selDays=t.days;
+  document.getElementById('form-title').textContent='Edit task';
+  document.getElementById('input-name').value=t.name;
+  document.getElementById('input-days').value=t.days;
+  document.getElementById('input-date').value=t.lastDone||todayStr();
+  document.getElementById('input-notes').value=t.notes||'';
+  document.getElementById('input-appt-date').value=t.apptDate||'';
+  document.getElementById('input-appt-notes').value=t.apptNotes||'';
+  setApptState(t.isAppt||false);
+  buildEmojiPicker(); buildCatPills(); buildCyclePresets();
+  document.getElementById('form-overlay').classList.add('open');
+}
+function saveTask(){
+  const name=document.getElementById('input-name').value.trim();
+  const rawDays=parseInt(document.getElementById('input-days').value,10);
+  const days=isNaN(rawDays)||rawDays<1?(selDays||7):rawDays;
+  const lastDone=document.getElementById('input-date').value||null;
+  const notes=document.getElementById('input-notes').value.trim();
+  const apptDate=apptOn?document.getElementById('input-appt-date').value:'';
+  const apptNotes=apptOn?document.getElementById('input-appt-notes').value.trim():'';
+  if(!name){document.getElementById('input-name').focus();return;}
+  if(editingId){
+    const t=tasks.find(x=>x.id===editingId);
+    if(t){t.emoji=selEmoji;t.name=name;t.cat=selCat;t.days=days;t.lastDone=lastDone;t.notes=notes;t.isAppt=apptOn;t.apptDate=apptDate;t.apptNotes=apptNotes;}
+  } else {
+    tasks.push({id:uid(),emoji:selEmoji,name,cat:selCat,days,lastDone,notes,isAppt:apptOn,apptDate,apptNotes,starred:false,history:[]});
+  }
+  save(); closeModal('form-overlay'); render();
+}
+
+document.getElementById('input-days').addEventListener('input',function(){
+  const v=parseInt(this.value,10); selDays=isNaN(v)?null:v;
+  document.querySelectorAll('.cycle-opt').forEach((b,i)=>b.classList.toggle('selected',CYCLE_PRESETS[i]&&CYCLE_PRESETS[i].days===v));
+});
+
+// ── MANAGE MODAL ──────────────────────────────────────────────────────────────
+let activeManageTab='cats';
+function openManage(tab){
+  activeManageTab=tab||'cats';
+  setManageTab(activeManageTab);
+  document.getElementById('archive-count-badge').textContent=archive.length;
+  document.getElementById('manage-overlay').classList.add('open');
+}
+function setManageTab(tab){
+  activeManageTab=tab;
+  document.getElementById('mtab-cats').classList.toggle('active',tab==='cats');
+  document.getElementById('mtab-archive').classList.toggle('active',tab==='archive');
+  document.getElementById('archive-count-badge').textContent=archive.length;
+  renderManageBody();
+}
+function renderManageBody(){
+  const body=document.getElementById('manage-body');
+  if(activeManageTab==='cats') body.innerHTML=buildCatsTab();
+  else body.innerHTML=buildArchiveTab();
+}
+function buildCatsTab(){
+  const catTaskCount=id=>tasks.filter(t=>t.cat===id).length;
+  const builtInHtml=BUILTIN_CATS.map(c=>`
+    <div class="cat-list-item built-in">
+      <span class="cat-list-icon">${c.icon}</span>
+      <span class="cat-list-name">${c.label}</span>
+      <span class="cat-list-badge">${catTaskCount(c.id)} tasks · built-in</span>
+    </div>`).join('');
+  const customHtml=customCats.map(c=>`
+    <div class="cat-list-item">
+      <span class="cat-list-icon">${c.icon}</span>
+      <span class="cat-list-name">${c.label}</span>
+      <span class="cat-list-badge">${catTaskCount(c.id)} tasks</span>
+      <button class="btn-cat-delete" onclick="deleteCustomCat('${c.id}')" title="Delete">✕</button>
+    </div>`).join('');
+  return `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Categories</div>
+      <div class="cat-list">${builtInHtml}${customHtml}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Add a category</div>
+      <div class="add-cat-row">
+        <button class="add-cat-emoji" id="new-cat-emoji-btn" onclick="openMiniEmojiPicker()" title="Pick emoji">${newCatEmoji}</button>
+        <input class="add-cat-input" id="new-cat-name" type="text" placeholder="e.g. Garden, Health, Work" maxlength="30">
+        <button class="btn-cat-add" onclick="addCustomCat()">Add</button>
+      </div>
+    </div>`;
+}
+function buildArchiveTab(){
+  if(archive.length===0) return `<div class="archive-empty">🗄 Nothing archived yet.<br><span style="font-size:13px">Tasks you archive (via 🗄 button) appear here.</span></div>`;
+  return `<div class="archive-list">${archive.map(t=>{
+    const cat=getCat(t.cat);
+    return `<div class="archive-item">
+      <span class="archive-item-icon">${t.emoji}</span>
+      <div class="archive-item-info">
+        <div class="archive-item-name">${esc(t.name)}</div>
+        <div class="archive-item-meta">${cat.label} · every ${t.days}d · archived ${fmtDate(t.archivedAt)}</div>
+      </div>
+      <button class="btn-restore" onclick="restoreTask('${t.id}')">Restore</button>
+      <button class="btn-perm-delete" onclick="permDelete('${t.id}')" title="Delete permanently">✕</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function addCustomCat(){
+  const input=document.getElementById('new-cat-name');
+  const label=input.value.trim();
+  if(!label){input.focus();return;}
+  const id='custom_'+uid();
+  customCats.push({id,label,icon:newCatEmoji,builtIn:false});
+  newCatEmoji='🏷️';
+  input.value='';
+  save(); renderManageBody();
+}
+function deleteCustomCat(id){
+  const count=tasks.filter(t=>t.cat===id).length;
+  if(count>0&&!confirm(`This category has ${count} task(s). They\'ll move to "Other". Continue?`)) return;
+  tasks.forEach(t=>{if(t.cat===id)t.cat='other';});
+  customCats=customCats.filter(c=>c.id!==id);
+  save(); render(); renderManageBody();
+}
+function restoreTask(id){
+  const t=archive.find(x=>x.id===id); if(!t)return;
+  const{archivedAt,...task}=t;
+  tasks.push(task);
+  archive=archive.filter(x=>x.id!==id);
+  save(); render(); renderManageBody();
+  document.getElementById('archive-count-badge').textContent=archive.length;
+}
+function permDelete(id){
+  if(!confirm('Permanently delete this task? This cannot be undone.')) return;
+  archive=archive.filter(x=>x.id!==id);
+  save(); renderManageBody();
+  document.getElementById('archive-count-badge').textContent=archive.length;
+}
+
+// ── MINI EMOJI PICKER ─────────────────────────────────────────────────────────
+function openMiniEmojiPicker(){
+  const btn=document.getElementById('new-cat-emoji-btn');
+  const picker=document.getElementById('mini-emoji-picker');
+  picker.innerHTML=EMOJIS.map(e=>`<button class="emoji-opt" onclick="pickNewCatEmoji('${e}')">${e}</button>`).join('');
+  const rect=btn.getBoundingClientRect();
+  picker.style.top=(rect.bottom+8+window.scrollY)+'px';
+  picker.style.left=rect.left+'px';
+  picker.style.display='grid';
+  setTimeout(()=>document.addEventListener('click',closeMiniPicker,{once:true}),10);
+}
+function pickNewCatEmoji(e){
+  newCatEmoji=e;
+  const btn=document.getElementById('new-cat-emoji-btn');
+  if(btn)btn.textContent=e;
+  document.getElementById('mini-emoji-picker').style.display='none';
+}
+function closeMiniPicker(e){
+  const p=document.getElementById('mini-emoji-picker');
+  if(!p.contains(e.target)) p.style.display='none';
+}
+
+// ── MODAL UTILS ───────────────────────────────────────────────────────────────
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function ovClick(e,id){ if(e.target===document.getElementById(id))closeModal(id); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeModal('form-overlay'); closeModal('detail-overlay'); closeModal('manage-overlay');
+    document.getElementById('mini-emoji-picker').style.display='none';
+  }
+  if(e.key==='Enter'&&document.getElementById('form-overlay').classList.contains('open')&&document.activeElement.tagName!=='TEXTAREA') saveTask();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('date-display').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+load(); render();
+checkNotifications(false); // silently check on load if permission already granted
+</script>
+</body>
+</html>

@@ -281,6 +281,11 @@ footer{text-align:center;padding:0 0 40px;font-size:12px;color:var(--muted);font
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item">
+      <div class="stat-label">Shopping</div>
+      <div class="stat-value" id="shop-val">—</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
       <div class="stat-label">Reservoir due</div>
       <div class="stat-value warn" id="res-val">—</div>
     </div>
@@ -318,6 +323,12 @@ footer{text-align:center;padding:0 0 40px;font-size:12px;color:var(--muted);font
       <div class="card-top"><div class="card-icon">🔄</div><div class="card-badge live">Live</div></div>
       <div class="card-body"><h3>Reservoir</h3><p id="res-subdial">Long-cycle tasks — fuel, laundry, deep clean, car maintenance.</p></div>
       <div class="card-footer"><div class="card-meta">Cycles · Reminders · Logs</div><div class="card-arrow">↗</div></div>
+    </a>
+
+    <a class="module-card" href="shopping.html" style="--ca:#2D5A3D;--ib:#EBF3EE;text-decoration:none">
+      <div class="card-top"><div class="card-icon">🛒</div><div class="card-badge live">Live</div></div>
+      <div class="card-body"><h3>Shopping</h3><p id="shop-subdial">Unified list from meals and household — organised by store and suburb.</p></div>
+      <div class="card-footer"><div class="card-meta">By store · By category · Tags</div><div class="card-arrow">↗</div></div>
     </a>
 
     <div class="module-card soon" style="--ca:#8A8178;--ib:#F0EEEB">
@@ -371,7 +382,6 @@ function tryUnlock(){
   if(!pw){ document.getElementById('lock-error').textContent='Enter a password.'; return; }
   const stored = localStorage.getItem(LOCK_KEY);
   if(!stored){
-    // first time — set password
     localStorage.setItem(LOCK_KEY, hashStr(pw));
     unlock();
   } else if(hashStr(pw) === stored){
@@ -380,12 +390,6 @@ function tryUnlock(){
     document.getElementById('lock-error').textContent = 'Incorrect password.';
     document.getElementById('lock-input').value='';
   }
-}
-
-function unlock(){
-  document.getElementById('lock-screen').classList.add('hidden');
-  document.getElementById('app').classList.add('visible');
-  initApp();
 }
 
 document.getElementById('lock-input').addEventListener('keydown', e => { if(e.key==='Enter') tryUnlock(); });
@@ -414,14 +418,13 @@ function unlock(){
 // APP INIT
 // ═══════════════════════════════════════════════
 function initApp(){
-  // date & greeting
   const h = new Date().getHours();
   document.getElementById('greeting').textContent = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
   document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
   loadCompass();
   loadMealsSubdial();
   loadReservoirSubdial();
+  loadShoppingSubdial();
 }
 
 // ═══════════════════════════════════════════════
@@ -552,6 +555,28 @@ function loadMealsSubdial(){
     const el=document.getElementById('meals-subdial');
     if(found) el.innerHTML=`Next: <strong style="color:var(--text)">${found.meal.name}</strong><br><span style="font-size:11px">${found.slot} · ${found.when}</span>`;
     else el.textContent='No meals planned this week.';
+  }catch(e){}
+}
+
+function loadShoppingSubdial(){
+  try{
+    const items = JSON.parse(localStorage.getItem('myos_shop_items')||'[]');
+    const el  = document.getElementById('shop-subdial');
+    const val = document.getElementById('shop-val');
+    const active   = items.filter(i=>!i.checked);
+    const untagged = active.filter(i=>!i.storeId);
+    val.textContent = active.length ? active.length+' items' : '—';
+    val.className = 'stat-value';
+    if(!active.length){
+      el.textContent = 'List is empty.';
+    } else if(untagged.length){
+      el.innerHTML = `<strong>${active.length} items</strong> · <span style="color:var(--warn)">${untagged.length} untagged</span>`;
+    } else {
+      const stores = JSON.parse(localStorage.getItem('myos_shop_stores')||'[]');
+      const storeSet = [...new Set(active.filter(i=>i.storeId).map(i=>i.storeId))];
+      const storeNames = storeSet.map(id=>{ const s=stores.find(x=>x.id===id); return s?s.name:''; }).filter(Boolean);
+      el.innerHTML = `<strong>${active.length} items</strong> · ${storeNames.slice(0,2).join(', ')}${storeNames.length>2?' +more':''}`;
+    }
   }catch(e){}
 }
 

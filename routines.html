@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MyOS — Habits & Routines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F2ED;--surface:#FDFBF8;--border:#E4DFD7;
+  --text:#1A1714;--muted:#8A8178;
+  --accent:#5B4FCF;--accent-lt:#EEEDFB;
+  --warn:#C4622D;
+  --r:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent}
+
+/* ── Header ── */
+header{padding:36px 48px 0;display:flex;justify-content:space-between;align-items:center;max-width:880px;margin:0 auto}
+.logo{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-.5px}
+.logo span{color:var(--accent);font-style:italic}
+.header-right{display:flex;align-items:center;gap:8px}
+.back-link{font-size:12px;color:var(--muted);text-decoration:none;margin-right:4px;transition:color .15s}
+.back-link:hover{color:var(--accent)}
+.hdr-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.divider{max-width:880px;margin:20px auto 0;padding:0 48px}
+.divider hr{border:none;border-top:1px solid var(--border)}
+main{max-width:880px;margin:0 auto;padding:28px 48px 80px}
+
+/* ── Week tabs ── */
+.week-tabs{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:22px}
+.day-tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px 9px;border-radius:11px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none}
+.dt-name{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.dt-num{font-family:'DM Serif Display',serif;font-size:18px;line-height:1.1;color:var(--muted)}
+.day-tab.past .dt-name,.day-tab.past .dt-num{color:var(--text)}
+.day-tab.today{background:var(--accent);border-color:var(--accent)}
+.day-tab.today .dt-name,.day-tab.today .dt-num{color:#fff}
+.day-tab.selected:not(.today){background:var(--accent-lt);border-color:var(--accent)}
+.day-tab.selected:not(.today) .dt-name,
+.day-tab.selected:not(.today) .dt-num{color:var(--accent)}
+.day-tab.future{opacity:.32;pointer-events:none}
+
+/* ── Energy card ── */
+.energy-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 22px;box-shadow:var(--shadow);margin-bottom:22px;animation:fadeUp .3s ease both;display:flex;gap:18px;align-items:flex-start}
+.notes-side{flex:1;display:flex;flex-direction:column;gap:7px}
+.ec-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.notes-input{width:100%;min-height:88px;resize:none;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);padding:10px 12px;outline:none;transition:border-color .15s;line-height:1.5}
+.notes-input:focus{border-color:var(--accent)}
+.notes-input::placeholder{color:var(--muted)}
+.notes-input:disabled{opacity:.5;cursor:default}
+.batteries-side{display:flex;gap:12px;flex-shrink:0;align-items:flex-end}
+
+/* Retro battery */
+.battery-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.bat-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.bat-outer{width:30px;height:92px;border:3px solid var(--text);border-radius:6px;position:relative;background:var(--bg);overflow:hidden;cursor:ns-resize;flex-shrink:0}
+.bat-nub{width:13px;height:6px;background:var(--text);border-radius:3px 3px 0 0;position:absolute;top:-8px;left:50%;transform:translateX(-50%)}
+.bat-fill{position:absolute;bottom:0;left:0;right:0;transition:height .06s;background:repeating-linear-gradient(-45deg,#1EC878 0px,#1EC878 9px,#17A862 9px,#17A862 11px,#1EC878 11px,#1EC878 20px)}
+.bat-pct{font-size:11px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+
+/* ── Section label ── */
+.section-label{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:13px}
+
+/* ── Entry cards ── */
+.entries-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+
+.entry-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .22s ease both;transition:opacity .25s}
+.entry-card.skipped{opacity:.38}
+
+.entry-main{display:flex;align-items:center;gap:6px;padding:12px 14px}
+
+/* expand button — far left */
+.expand-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;flex-shrink:0;width:22px;height:22px;display:flex;align-items:center;justify-content:center;transition:color .15s;padding:0;line-height:1;font-family:monospace}
+.expand-btn:hover{color:var(--accent)}
+.expand-btn.open{color:var(--accent)}
+
+.entry-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center}
+.entry-title{flex:1;font-size:14px;font-weight:500;cursor:pointer;line-height:1.3;transition:color .15s;min-width:0}
+.entry-title:hover{color:var(--accent)}
+
+.icon-btn{background:none;border:1px solid transparent;border-radius:7px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted);flex-shrink:0;transition:all .15s;line-height:1}
+.icon-btn:hover{border-color:var(--border);color:var(--text)}
+.icon-btn.skip-btn:hover{color:var(--warn);border-color:var(--warn)}
+.icon-btn.undo-btn{color:var(--accent)}
+.icon-btn.undo-btn:hover{border-color:var(--accent)}
+
+/* Steps — inline collapsible */
+.entry-steps{display:none;padding:0 14px 12px 50px}
+.entry-steps.open{display:block}
+.entry-steps ul{border-top:1px solid var(--border);padding-top:10px;list-style:none;display:flex;flex-direction:column;gap:5px}
+.entry-steps li{font-size:12px;color:var(--muted);padding-left:12px;position:relative;line-height:1.4}
+.entry-steps li::before{content:'·';position:absolute;left:0;color:var(--accent);font-size:14px;line-height:1.1}
+
+.no-entries{font-size:14px;color:var(--muted);text-align:center;padding:22px 0;font-style:italic}
+
+/* ── Add button ── */
+.add-btn{width:100%;border:1.5px dashed var(--border);border-radius:14px;padding:12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);background:none;cursor:pointer;transition:all .2s}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-lt)}
+
+/* ── Overlays & modals ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,23,20,.45);backdrop-filter:blur(4px);z-index:200;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+@media(min-width:540px){.overlay{align-items:center;padding:20px}}
+
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:22px 22px 36px;box-shadow:0 -8px 40px rgba(0,0,0,.15);animation:slideUp .2s ease;max-height:90vh;overflow-y:auto}
+@media(min-width:540px){.modal{border-radius:20px;animation:modalIn .2s ease}}
+@keyframes slideUp{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
+@keyframes modalIn{from{transform:translateY(8px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+@media(min-width:540px){.modal-handle{display:none}}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
+.modal-title{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;line-height:1.2}
+.modal-close-btn{background:none;border:1px solid var(--border);border-radius:7px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted);flex-shrink:0;transition:all .15s}
+.modal-close-btn:hover{border-color:var(--warn);color:var(--warn)}
+
+/* Strip grid (week history) */
+.strip-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;background:var(--bg);border-radius:12px;padding:14px 8px}
+.strip-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.strip-lbl{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.strip-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;user-select:none}
+.strip-dot.done{background:var(--accent);color:#fff;cursor:pointer}
+.strip-dot.done:hover{opacity:.75}
+.strip-dot.skipped{border:2px solid var(--border);color:var(--muted);cursor:pointer;background:transparent}
+.strip-dot.skipped:hover{border-color:var(--accent)}
+.strip-dot.na{color:var(--border);font-size:10px}
+.strip-dot.future{color:var(--border);font-size:10px}
+.strip-date{font-size:10px;color:var(--muted)}
+
+/* Form elements */
+.form-group{margin-bottom:16px}
+.form-label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+.form-input{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);padding:10px 14px;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+
+/* Frequency day picker */
+.freq-day-row{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;margin-bottom:14px}
+.freq-day-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.freq-day-lbl{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.freq-day-dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:11px;color:var(--muted)}
+.freq-day-dot.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.freq-day-dot:hover:not(.sel){border-color:var(--accent);color:var(--accent)}
+
+/* Repeat every row */
+.repeat-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.repeat-lbl{font-size:13px;color:var(--muted);flex-shrink:0}
+.repeat-opts{display:flex;gap:6px}
+.repeat-pill{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.repeat-pill.sel{background:var(--accent-lt);border-color:var(--accent);color:var(--accent);font-weight:500}
+
+/* Steps editor */
+.steps-list-edit{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.step-edit-row{display:flex;gap:5px;align-items:center}
+.step-edit-input{flex:1;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);padding:7px 11px;outline:none;transition:border-color .15s}
+.step-edit-input:focus{border-color:var(--accent)}
+.step-del-btn{background:none;border:1px solid var(--border);border-radius:7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--muted);flex-shrink:0;transition:all .15s}
+.step-del-btn:hover{border-color:var(--warn);color:var(--warn)}
+.add-step-row{display:flex;gap:5px;align-items:center}
+.add-step-input{flex:1;border:1px dashed var(--border);border-radius:8px;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);padding:7px 11px;outline:none;transition:border-color .15s}
+.add-step-input:focus{border-color:var(--accent)}
+.add-step-input::placeholder{color:var(--muted)}
+.add-step-btn{background:var(--accent);border:none;border-radius:7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px;flex-shrink:0;line-height:1;transition:opacity .15s}
+.add-step-btn:hover{opacity:.8}
+
+/* Modal actions */
+.modal-actions{display:flex;gap:8px;margin-top:4px}
+.btn-primary{flex:1;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:none;border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--warn);color:var(--warn)}
+
+/* Settings toggle */
+.toggle-track{width:44px;height:26px;border-radius:13px;background:var(--border);border:none;cursor:pointer;position:relative;flex-shrink:0;transition:background .2s;margin-top:2px}
+.toggle-track.on{background:var(--accent)}
+.toggle-knob{position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);display:block}
+.toggle-track.on .toggle-knob{transform:translateX(18px)}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--text);color:#fff;padding:10px 22px;border-radius:10px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;z-index:400;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:0 0 40px;font-size:12px;color:var(--muted);font-weight:300}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+@media(max-width:600px){
+  header,.divider,main{padding-left:18px;padding-right:18px}
+  .energy-card{flex-direction:column-reverse;gap:14px}
+  .batteries-side{flex-direction:row;align-self:flex-end}
+  .bat-outer{height:72px;width:26px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">My<span>OS</span></div>
+  <div class="header-right">
+    <a class="back-link" href="index.html">← Hub</a>
+    <button class="hdr-btn" onclick="openSettings()">⚙ Settings</button>
+  </div>
+</header>
+<div class="divider"><hr></div>
+
+<main>
+  <div class="week-tabs" id="week-tabs"></div>
+
+  <!-- Energy + Notes -->
+  <div class="energy-card">
+    <div class="notes-side">
+      <div class="ec-label">Day note</div>
+      <textarea class="notes-input" id="notes-input"
+        placeholder="What affected your energy today?" maxlength="400"
+        autocorrect="on" autocapitalize="sentences"
+        onchange="saveNote()"></textarea>
+    </div>
+    <div class="batteries-side">
+      <div class="battery-wrap">
+        <div class="bat-label">AM</div>
+        <div class="bat-outer" id="bat-morning" data-period="morning">
+          <div class="bat-nub"></div>
+          <div class="bat-fill" id="fill-morning" style="height:0%"></div>
+        </div>
+        <div class="bat-pct" id="pct-morning">—</div>
+      </div>
+      <div class="battery-wrap">
+        <div class="bat-label">PM</div>
+        <div class="bat-outer" id="bat-arvo" data-period="arvo">
+          <div class="bat-nub"></div>
+          <div class="bat-fill" id="fill-arvo" style="height:0%"></div>
+        </div>
+        <div class="bat-pct" id="pct-arvo">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Routines</div>
+  <div class="entries-list" id="entries-list"></div>
+  <button class="add-btn" onclick="openAddModal()">+ Add routine</button>
+</main>
+
+<footer>MyOS · Habits & Routines · v1</footer>
+
+<!-- Week strip modal -->
+<div class="overlay" id="strip-overlay" onclick="overlayClick(event,'strip-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="strip-title">—</div>
+      <button class="modal-close-btn" onclick="closeOverlay('strip-overlay')">✕</button>
+    </div>
+    <div class="strip-grid" id="strip-grid"></div>
+  </div>
+</div>
+
+<!-- Add/Edit entry modal -->
+<div class="overlay" id="entry-overlay" onclick="overlayClick(event,'entry-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="entry-modal-title">Add routine</div>
+      <button class="modal-close-btn" onclick="closeOverlay('entry-overlay')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="ef-name" type="text" maxlength="60"
+             placeholder="e.g. Morning prep"
+             autocomplete="off" autocorrect="on" autocapitalize="sentences">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Icon <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></label>
+      <input class="form-input" id="ef-icon" type="text" maxlength="4" placeholder="🌅"
+             style="max-width:80px" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Repeats on</label>
+      <div class="freq-day-row" id="ef-freq-days"></div>
+      <div class="repeat-row">
+        <span class="repeat-lbl">Every</span>
+        <div class="repeat-opts" id="ef-repeat-opts"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Steps <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></label>
+      <div class="steps-list-edit" id="ef-steps"></div>
+      <div class="add-step-row">
+        <input class="add-step-input" id="ef-new-step" type="text" maxlength="80"
+               placeholder="Add a step…"
+               autocomplete="off" autocorrect="on" autocapitalize="sentences"
+               onkeydown="if(event.key==='Enter'){efAddStep();event.preventDefault()}">
+        <button class="add-step-btn" onclick="efAddStep()">+</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveEntry()">Save</button>
+      <button class="btn-ghost" id="ef-delete-btn" onclick="confirmDeleteEntry()" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settings-overlay" onclick="overlayClick(event,'settings-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Settings</div>
+      <button class="modal-close-btn" onclick="closeOverlay('settings-overlay')">✕</button>
+    </div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:3px">Presentation Mode</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Hides private entries when showing others. Private data is never sent to any API.</div>
+      </div>
+      <button class="toggle-track" id="pres-toggle" onclick="togglePresentationMode()">
+        <span class="toggle-knob" id="pres-knob"></span>
+      </button>
+    </div>
+    <div style="margin-top:20px">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">System changelog</div>
+      <div id="settings-changelog" style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--text)"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════
+// SCHEMA & MIGRATION
+// Rule: SCHEMA_VERSION bumps on every structural change
+// Rule: Migrations are additive — never delete existing data
+// Rule: localStorage.clear() is forbidden in MyOS
+// Rule: Every migration writes a human-readable changelog entry
+// ═══════════════════════════════════════════════════
+const SCHEMA_VERSION = 2;
+
+function runMigrations(){
+  const v = parseInt(localStorage.getItem('myos_schema_version')||'0');
+  if(v >= SCHEMA_VERSION) return;
+  if(v < 1) migrate_0_to_1();
+  if(v < 2) migrate_1_to_2();
+  localStorage.setItem('myos_schema_version', String(SCHEMA_VERSION));
+}
+
+function migrate_0_to_1(){
+  if(!localStorage.getItem('myos_changelog'))
+    localStorage.setItem('myos_changelog','[]');
+  if(!localStorage.getItem('myos_entries'))
+    localStorage.setItem('myos_entries', JSON.stringify(defaultEntries()));
+  if(!localStorage.getItem('myos_daydata'))
+    localStorage.setItem('myos_daydata','{}');
+  if(!localStorage.getItem('myos_settings'))
+    localStorage.setItem('myos_settings', JSON.stringify({presentationMode:false}));
+  writeChangelog(1,'Initial setup — Routines with Morning, Evening & Weekend defaults.');
+}
+
+// v1 used string dayType ('weekday','weekend','daily','friday')
+// v2 uses days array [0-6] Mon=0…Sun=6 + repeatEvery weeks
+function migrate_1_to_2(){
+  const dayTypeMap = {
+    weekday:[0,1,2,3,4], weekend:[5,6],
+    daily:[0,1,2,3,4,5,6], friday:[4]
+  };
+  const entries = getEntries();
+  entries.forEach(e=>{
+    if(!e.days){
+      e.days = dayTypeMap[e.dayType] || [0,1,2,3,4];
+    }
+    if(!e.repeatEvery) e.repeatEvery = 1;
+  });
+  saveEntries(entries);
+  writeChangelog(2,'Upgraded frequency model — per-day selection and repeat interval per entry.');
+}
+
+// Future migrations follow this pattern:
+// function migrate_2_to_3(){
+//   const entries = getEntries();
+//   entries.forEach(e => { if(!e.newField) e.newField = defaultValue; });
+//   saveEntries(entries);
+//   writeChangelog(3, 'Added [feature] — existing data migrated cleanly.');
+// }
+
+function defaultEntries(){
+  return [
+    {id:uid(),icon:'🌅',title:'Morning prep before work',
+     days:[0,1,2,3,4],repeatEvery:1,private:false,
+     steps:['Wake up with alarm, take phone','Dress up',
+            'Bathroom: brush teeth, clean face, shave if needed',
+            'Prepare breakfast, get a glass of warm water','Wash dishes',
+            'Toilet before heading off',
+            'Tidy up and pack (double check everything)','Lock door',
+            'Head out — travel to work'],
+     createdAt:todayStr()},
+    {id:uid(),icon:'🌙',title:'Evening wind-down',
+     days:[0,1,2,3,4],repeatEvery:1,private:false,
+     steps:['Dinner','Wash dishes',
+            'Wind down — reading, games or prep for tomorrow',
+            '100 push-ups','Shower','In bed'],
+     createdAt:todayStr()},
+    {id:uid(),icon:'☀️',title:'Weekend morning',
+     days:[5,6],repeatEvery:1,private:false,
+     steps:['Wake naturally — no alarm rush','Bathroom and freshen up',
+            'Try a proper breakfast','Tidy up'],
+     createdAt:todayStr()}
+  ];
+}
+
+function writeChangelog(version, note){
+  const log = JSON.parse(localStorage.getItem('myos_changelog')||'[]');
+  if(log.some(e=>e.version===version)) return;
+  log.push({version, date:todayStr(), note});
+  localStorage.setItem('myos_changelog', JSON.stringify(log));
+}
+
+// ═══════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════
+function getEntries(){ return JSON.parse(localStorage.getItem('myos_entries')||'[]'); }
+function saveEntries(e){ localStorage.setItem('myos_entries', JSON.stringify(e)); }
+function getDayData(){ return JSON.parse(localStorage.getItem('myos_daydata')||'{}'); }
+function saveDayData(d){ localStorage.setItem('myos_daydata', JSON.stringify(d)); }
+function getSettings(){ return JSON.parse(localStorage.getItem('myos_settings')||'{}'); }
+function saveSettings(s){ localStorage.setItem('myos_settings', JSON.stringify(s)); }
+function getChangelog(){ return JSON.parse(localStorage.getItem('myos_changelog')||'[]'); }
+
+// ═══════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function overlayClick(e,id){ if(e.target===document.getElementById(id)) closeOverlay(id); }
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+
+// Returns Monday (YYYY-MM-DD) of the week containing dateStr
+function weekStartStr(dateStr){
+  const d = new Date(dateStr+'T12:00:00');
+  const day = d.getDay();
+  const diff = day===0 ? -6 : 1-day;
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+
+function getWeekDays(){
+  const mon = new Date(weekStartStr(todayStr())+'T12:00:00');
+  const days=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    days.push(d.toISOString().slice(0,10));
+  }
+  return days;
+}
+
+const DAY_SHORT = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+
+function dayLabel(dateStr){
+  // Returns Mo/Tu/We etc
+  const d=new Date(dateStr+'T12:00:00').getDay(); // 0=Sun
+  const idx = d===0?6:d-1;
+  return DAY_SHORT[idx];
+}
+
+function dayNum(dateStr){ return new Date(dateStr+'T12:00:00').getDate(); }
+function isToday(d){ return d===todayStr(); }
+function isPast(d){ return d<todayStr(); }
+function isFuture(d){ return d>todayStr(); }
+
+// Day index: Mon=0…Sun=6
+function dayIdx(dateStr){
+  const d=new Date(dateStr+'T12:00:00').getDay();
+  return d===0?6:d-1;
+}
+
+// Does this entry apply on dateStr?
+function entryApplies(entry, dateStr){
+  const days = entry.days||[];
+  if(!days.includes(dayIdx(dateStr))) return false;
+  const rep = entry.repeatEvery||1;
+  if(rep===1) return true;
+  // Count weeks between entry creation and target date
+  const createdMon = new Date(weekStartStr(entry.createdAt)+'T12:00:00');
+  const targetMon  = new Date(weekStartStr(dateStr)+'T12:00:00');
+  const weeksDiff  = Math.round((targetMon-createdMon)/(7*24*3600*1000));
+  return weeksDiff>=0 && weeksDiff%rep===0;
+}
+
+function isSkipped(entryId, dateStr){
+  const dd=getDayData();
+  return !!(dd[dateStr]&&dd[dateStr].skips&&dd[dateStr].skips[entryId]);
+}
+
+function setSkip(entryId, dateStr, val){
+  const dd=getDayData();
+  if(!dd[dateStr]) dd[dateStr]={};
+  if(!dd[dateStr].skips) dd[dateStr].skips={};
+  if(val) dd[dateStr].skips[entryId]=true;
+  else delete dd[dateStr].skips[entryId];
+  saveDayData(dd);
+}
+
+// ═══════════════════════════════════════════════════
+// HUB SUBDIAL
+// ═══════════════════════════════════════════════════
+function updateSubdial(){
+  const entries=getEntries();
+  const applicable=entries.filter(e=>entryApplies(e,todayStr()));
+  const done=applicable.filter(e=>!isSkipped(e.id,todayStr())).length;
+  localStorage.setItem('myos_habits_subdial', done+' / '+applicable.length);
+}
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let selectedDate = todayStr();
+
+// ═══════════════════════════════════════════════════
+// RENDER — WEEK TABS
+// ═══════════════════════════════════════════════════
+function renderWeekTabs(){
+  const days=getWeekDays();
+  const wrap=document.getElementById('week-tabs');
+  wrap.innerHTML='';
+  days.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='day-tab';
+    if(isToday(d)) el.classList.add('today');
+    else if(isPast(d)) el.classList.add('past');
+    else el.classList.add('future');
+    if(d===selectedDate) el.classList.add('selected');
+    el.innerHTML=`<span class="dt-name">${dayLabel(d)}</span><span class="dt-num">${dayNum(d)}</span>`;
+    el.onclick=()=>selectDay(d);
+    wrap.appendChild(el);
+  });
+}
+
+function selectDay(dateStr){
+  if(isFuture(dateStr)) return;
+  selectedDate=dateStr;
+  renderWeekTabs();
+  renderEnergyCard();
+  renderEntries();
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER — ENERGY CARD
+// ═══════════════════════════════════════════════════
+function renderEnergyCard(){
+  const dd=getDayData();
+  const data=dd[selectedDate]||{};
+  const editable=!isFuture(selectedDate);
+  applyBattery('morning', data.morning??null);
+  applyBattery('arvo',    data.arvo??null);
+  const notesEl=document.getElementById('notes-input');
+  notesEl.value=data.note||'';
+  notesEl.disabled=!editable;
+}
+
+function applyBattery(period, pct){
+  const fill=document.getElementById('fill-'+period);
+  const pctEl=document.getElementById('pct-'+period);
+  if(pct===null||pct===undefined){
+    fill.style.height='0%';
+    pctEl.textContent='—';
+  } else {
+    fill.style.height=pct+'%';
+    pctEl.textContent=pct+'%';
+  }
+}
+
+function saveNote(){
+  const dd=getDayData();
+  if(!dd[selectedDate]) dd[selectedDate]={};
+  dd[selectedDate].note=document.getElementById('notes-input').value;
+  saveDayData(dd);
+}
+
+function setupBatteries(){
+  ['morning','arvo'].forEach(period=>{
+    const el=document.getElementById('bat-'+period);
+    let dragging=false;
+
+    function getPct(clientY){
+      const rect=el.getBoundingClientRect();
+      return Math.round(Math.max(0,Math.min(1,(rect.bottom-clientY)/rect.height))*100);
+    }
+    function apply(pct){
+      if(isFuture(selectedDate)) return;
+      const dd=getDayData();
+      if(!dd[selectedDate]) dd[selectedDate]={};
+      dd[selectedDate][period]=pct;
+      saveDayData(dd);
+      applyBattery(period,pct);
+    }
+
+    el.addEventListener('mousedown',e=>{dragging=true;apply(getPct(e.clientY));e.preventDefault();});
+    window.addEventListener('mousemove',e=>{if(dragging)apply(getPct(e.clientY));});
+    window.addEventListener('mouseup',()=>{dragging=false;});
+    el.addEventListener('touchstart',e=>{dragging=true;apply(getPct(e.touches[0].clientY));e.preventDefault();},{passive:false});
+    window.addEventListener('touchmove',e=>{if(dragging)apply(getPct(e.touches[0].clientY));},{passive:true});
+    window.addEventListener('touchend',()=>{dragging=false;});
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER — ENTRIES
+// ═══════════════════════════════════════════════════
+function renderEntries(){
+  const entries=getEntries();
+  const settings=getSettings();
+  const list=document.getElementById('entries-list');
+  list.innerHTML='';
+
+  const applicable=entries.filter(e=>{
+    if(!entryApplies(e,selectedDate)) return false;
+    if(settings.presentationMode&&e.private) return false;
+    return true;
+  });
+
+  if(!applicable.length){
+    list.innerHTML='<div class="no-entries">Nothing scheduled.</div>';
+    updateSubdial(); return;
+  }
+
+  const canEdit=!isFuture(selectedDate);
+
+  applicable.forEach((entry,i)=>{
+    const skipped=isSkipped(entry.id,selectedDate);
+    const hasSteps=entry.steps&&entry.steps.length>0;
+    const card=document.createElement('div');
+    card.className='entry-card'+(skipped?' skipped':'');
+    card.style.animationDelay=(i*0.04)+'s';
+    card.id='ec-'+entry.id;
+
+    card.innerHTML=`
+      <div class="entry-main">
+        ${hasSteps
+          ? `<button class="expand-btn" id="expbtn-${entry.id}"
+                     onclick="toggleSteps('${entry.id}',this)" aria-label="Expand steps">▸</button>`
+          : `<span style="width:22px;flex-shrink:0"></span>`}
+        <span class="entry-icon">${esc(entry.icon||'•')}</span>
+        <span class="entry-title" onclick="openStripModal('${entry.id}')">${esc(entry.title)}</span>
+        ${canEdit&&!skipped?`<button class="icon-btn skip-btn" onclick="skipEntry('${entry.id}')" title="Skip today">✕</button>`:''}
+        ${canEdit&&skipped?`<button class="icon-btn undo-btn" onclick="unskipEntry('${entry.id}')" title="Mark done">↩</button>`:''}
+        <button class="icon-btn" onclick="openEditModal('${entry.id}')" title="Edit">…</button>
+      </div>
+      ${hasSteps?`<div class="entry-steps" id="steps-${entry.id}">
+        <ul>${entry.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
+      </div>`:''}`;
+
+    list.appendChild(card);
+  });
+
+  updateSubdial();
+}
+
+function toggleSteps(id, btn){
+  const el=document.getElementById('steps-'+id);
+  if(!el) return;
+  const open=el.classList.toggle('open');
+  btn.textContent=open?'▾':'▸';
+  btn.classList.toggle('open',open);
+}
+
+function skipEntry(id){
+  setSkip(id,selectedDate,true);
+  renderEntries();
+}
+function unskipEntry(id){
+  setSkip(id,selectedDate,false);
+  renderEntries();
+}
+
+// ═══════════════════════════════════════════════════
+// WEEK STRIP MODAL
+// ═══════════════════════════════════════════════════
+let stripEntryId=null;
+
+function openStripModal(id){
+  stripEntryId=id;
+  const entry=getEntries().find(e=>e.id===id);
+  if(!entry) return;
+  document.getElementById('strip-title').textContent=entry.title;
+  renderStripGrid(entry);
+  document.getElementById('strip-overlay').classList.add('open');
+}
+
+function renderStripGrid(entry){
+  const days=getWeekDays();
+  const grid=document.getElementById('strip-grid');
+  grid.innerHTML='';
+  days.forEach(d=>{
+    const col=document.createElement('div');
+    col.className='strip-col';
+    const applies=entryApplies(entry,d);
+    const fut=isFuture(d);
+    const skipped=applies&&isSkipped(entry.id,d);
+    let cls,content;
+    if(!applies){cls='na';content='—';}
+    else if(fut){cls='future';content='·';}
+    else if(skipped){cls='skipped';content='○';}
+    else{cls='done';content='●';}
+    const canToggle=applies&&!fut;
+    col.innerHTML=`
+      <div class="strip-lbl">${dayLabel(d)}</div>
+      <div class="strip-dot ${cls}" ${canToggle?`onclick="stripToggle('${entry.id}','${d}',this)"`:''}>
+        ${content}
+      </div>
+      <div class="strip-date">${dayNum(d)}</div>`;
+    grid.appendChild(col);
+  });
+}
+
+function stripToggle(entryId,dateStr,dot){
+  const wasSkipped=isSkipped(entryId,dateStr);
+  setSkip(entryId,dateStr,!wasSkipped);
+  dot.className='strip-dot '+(wasSkipped?'done':'skipped');
+  dot.textContent=wasSkipped?'●':'○';
+  renderEntries();
+  showToast(wasSkipped?'Marked done':'Marked skipped');
+}
+
+// ═══════════════════════════════════════════════════
+// ADD / EDIT MODAL
+// ═══════════════════════════════════════════════════
+let editingId=null;
+let efSteps=[];
+let efDays=[0,1,2,3,4]; // Mon-Fri default
+let efRepeatEvery=1;
+
+function openAddModal(){
+  editingId=null; efSteps=[]; efDays=[0,1,2,3,4]; efRepeatEvery=1;
+  document.getElementById('entry-modal-title').textContent='Add routine';
+  document.getElementById('ef-name').value='';
+  document.getElementById('ef-icon').value='';
+  document.getElementById('ef-delete-btn').style.display='none';
+  renderFreqPicker();
+  renderEfSteps();
+  document.getElementById('entry-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('ef-name').focus(),120);
+}
+
+function openEditModal(id){
+  const entry=getEntries().find(e=>e.id===id);
+  if(!entry) return;
+  editingId=id; efSteps=[...(entry.steps||[])];
+  efDays=[...(entry.days||[0,1,2,3,4])];
+  efRepeatEvery=entry.repeatEvery||1;
+  document.getElementById('entry-modal-title').textContent='Edit routine';
+  document.getElementById('ef-name').value=entry.title;
+  document.getElementById('ef-icon').value=entry.icon||'';
+  document.getElementById('ef-delete-btn').style.display='block';
+  renderFreqPicker();
+  renderEfSteps();
+  document.getElementById('entry-overlay').classList.add('open');
+}
+
+function renderFreqPicker(){
+  // Day circles
+  const wrap=document.getElementById('ef-freq-days');
+  wrap.innerHTML='';
+  DAY_SHORT.forEach((lbl,i)=>{
+    const col=document.createElement('div');
+    col.className='freq-day-col';
+    col.innerHTML=`
+      <div class="freq-day-lbl">${lbl}</div>
+      <div class="freq-day-dot${efDays.includes(i)?' sel':''}"
+           onclick="efToggleDay(${i},this)">${i<5?'·':'·'}</div>`;
+    wrap.appendChild(col);
+  });
+
+  // Repeat every
+  const ropts=document.getElementById('ef-repeat-opts');
+  ropts.innerHTML='';
+  [1,2,3,4].forEach(w=>{
+    const btn=document.createElement('button');
+    btn.className='repeat-pill'+(efRepeatEvery===w?' sel':'');
+    btn.textContent=w===1?'week':w+'w';
+    btn.onclick=()=>{efRepeatEvery=w;renderRepeatPills();};
+    ropts.appendChild(btn);
+  });
+}
+
+function efToggleDay(i,dot){
+  const idx=efDays.indexOf(i);
+  if(idx>-1) efDays.splice(idx,1);
+  else efDays.push(i);
+  dot.classList.toggle('sel',efDays.includes(i));
+}
+
+function renderRepeatPills(){
+  document.querySelectorAll('.repeat-pill').forEach((btn,i)=>{
+    btn.classList.toggle('sel',(i+1)===efRepeatEvery);
+  });
+}
+
+function renderEfSteps(){
+  const wrap=document.getElementById('ef-steps');
+  wrap.innerHTML='';
+  efSteps.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.className='step-edit-row';
+    row.innerHTML=`
+      <input class="step-edit-input" value="${esc(s)}" maxlength="80"
+             autocorrect="on" autocapitalize="sentences"
+             onchange="efSteps[${i}]=this.value">
+      <button class="step-del-btn" onclick="efDeleteStep(${i})">✕</button>`;
+    wrap.appendChild(row);
+  });
+}
+
+function efAddStep(){
+  const inp=document.getElementById('ef-new-step');
+  const val=inp.value.trim();
+  if(!val) return;
+  efSteps.push(val); inp.value='';
+  renderEfSteps(); inp.focus();
+}
+
+function efDeleteStep(i){
+  efSteps.splice(i,1); renderEfSteps();
+}
+
+function saveEntry(){
+  const name=document.getElementById('ef-name').value.trim();
+  if(!name){showToast('Add a name first');return;}
+  if(!efDays.length){showToast('Select at least one day');return;}
+  const icon=document.getElementById('ef-icon').value.trim()||'•';
+  const entries=getEntries();
+  if(editingId){
+    const idx=entries.findIndex(e=>e.id===editingId);
+    if(idx>-1){
+      Object.assign(entries[idx],{title:name,icon,days:[...efDays],repeatEvery:efRepeatEvery,steps:[...efSteps]});
+    }
+  } else {
+    entries.push({id:uid(),icon,title:name,days:[...efDays],repeatEvery:efRepeatEvery,private:false,steps:[...efSteps],createdAt:todayStr()});
+  }
+  saveEntries(entries);
+  closeOverlay('entry-overlay');
+  renderEntries();
+  showToast(editingId?'Routine updated':'Routine added');
+}
+
+function confirmDeleteEntry(){
+  if(!editingId) return;
+  if(!confirm('Remove this routine?')) return;
+  saveEntries(getEntries().filter(e=>e.id!==editingId));
+  closeOverlay('entry-overlay');
+  renderEntries();
+  showToast('Routine removed');
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════
+function openSettings(){
+  const s=getSettings();
+  const tog=document.getElementById('pres-toggle');
+  tog.classList.toggle('on',!!s.presentationMode);
+  const cl=getChangelog().slice().reverse();
+  const el=document.getElementById('settings-changelog');
+  el.innerHTML=cl.length?cl.map(e=>`
+    <div style="display:flex;gap:8px;align-items:baseline;line-height:1.4">
+      <span style="color:var(--muted);flex-shrink:0">${esc(e.date)}</span>
+      <span style="background:var(--accent-lt);color:var(--accent);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;flex-shrink:0">v${e.version}</span>
+      <span>${esc(e.note)}</span>
+    </div>`).join('')
+  :'<span style="color:var(--muted)">No changes recorded.</span>';
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function togglePresentationMode(){
+  const s=getSettings();
+  s.presentationMode=!s.presentationMode;
+  saveSettings(s);
+  document.getElementById('pres-toggle').classList.toggle('on',s.presentationMode);
+  renderEntries();
+  showToast(s.presentationMode?'Presentation mode on':'Presentation mode off');
+}
+
+// ═══════════════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')
+    ['strip-overlay','entry-overlay','settings-overlay']
+      .forEach(id=>closeOverlay(id));
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+function init(){
+  runMigrations();
+  selectedDate=todayStr();
+  renderWeekTabs();
+  renderEnergyCard();
+  renderEntries();
+  setupBatteries();
+}
+
+init();
+</script>
+</body>
+</html>

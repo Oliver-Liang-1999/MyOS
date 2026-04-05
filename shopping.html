@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyOS — Shopping</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F2ED;--surface:#FDFBF8;--border:#E4DFD7;--text:#1A1714;--muted:#8A8178;
+  --accent:#2D5A3D;--accent-lt:#EBF3EE;--warn:#C4622D;--warn-lt:#FDE8E0;
+  --r:16px;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow-hover:0 4px 12px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.07);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{padding:40px 24px 0;display:flex;justify-content:space-between;align-items:flex-end;max-width:700px;margin:0 auto}
+.logo{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-.5px}
+.logo span{color:var(--accent);font-style:italic}
+.header-right{text-align:right}
+.back-link{font-size:12px;color:var(--muted);text-decoration:none;display:block;margin-bottom:4px;transition:color .15s}
+.back-link:hover{color:var(--accent)}
+#date-display{font-size:12px;color:var(--muted);font-weight:300}
+.divider{max-width:700px;margin:20px auto 0;padding:0 24px}
+.divider hr{border:none;border-top:1px solid var(--border)}
+main{max-width:700px;margin:0 auto;padding:28px 24px 80px}
+
+/* Stats */
+.stats-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;display:flex;gap:28px;box-shadow:var(--shadow);flex-wrap:wrap;margin-bottom:24px;animation:fadeUp .3s ease both}
+.stat-item{display:flex;flex-direction:column;gap:3px}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.stat-value{font-family:'DM Serif Display',serif;font-size:20px}
+.stat-value.green{color:var(--accent)}
+.stat-divider{width:1px;background:var(--border);align-self:stretch}
+
+/* Toolbar */
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.view-toggle{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px}
+.view-btn{border:none;background:none;padding:6px 14px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+.view-btn.active{background:var(--accent);color:#fff}
+.toolbar-right{display:flex;gap:8px}
+.btn-sm{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-sm.accent:hover{opacity:.85}
+
+/* Section headers */
+.suburb-header{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:28px 0 12px;display:flex;align-items:center;gap:8px}
+.suburb-header:first-child{margin-top:0}
+.store-header{font-size:13px;font-weight:500;color:var(--accent);margin:16px 0 8px;display:flex;align-items:center;gap:6px;padding-left:4px}
+.cat-header{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px;padding-left:4px}
+
+/* Items */
+.shop-items{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+.shop-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:all .15s;position:relative}
+.shop-item.checked{opacity:.5}
+.shop-item.checked .item-name{text-decoration:line-through;color:var(--muted)}
+.shop-check{width:20px;height:20px;border:1.5px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .15s}
+.shop-item.checked .shop-check{background:var(--accent);border-color:var(--accent);color:#fff}
+.item-body{flex:1;min-width:0}
+.item-name{font-size:14px;line-height:1.3}
+.item-meta{display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.item-store-tag{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--accent-lt);color:var(--accent);font-weight:500;cursor:pointer;white-space:nowrap}
+.item-store-tag.unset{background:var(--border);color:var(--muted)}
+.item-source{font-size:10px;color:var(--muted)}
+.item-qty{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.qty-btn{width:26px;height:26px;border:1px solid var(--border);background:var(--bg);border-radius:7px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all .15s;flex-shrink:0}
+.qty-btn:hover{border-color:var(--accent);color:var(--accent)}
+.qty-val{font-size:13px;font-weight:500;min-width:20px;text-align:center}
+.item-del{width:28px;height:28px;border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.item-del:hover{background:var(--warn-lt);color:var(--warn)}
+
+/* Add item */
+.add-item-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;gap:8px;align-items:center;margin-top:8px}
+.add-item-input{flex:1;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none}
+.add-item-input::placeholder{color:var(--muted)}
+.add-item-btn{border:none;background:var(--accent);color:#fff;border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap}
+
+/* Empty */
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted);font-size:14px;line-height:1.6}
+.empty-state strong{color:var(--text)}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,23,20,.45);backdrop-filter:blur(4px);z-index:100;align-items:flex-end;justify-content:center;padding:0}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:0;width:100%;max-width:700px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.15);animation:slideUp .22s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0}
+.modal-header{padding:16px 24px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.modal-title{font-family:'DM Serif Display',serif;font-size:18px}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.btn{border:none;padding:9px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--border);color:var(--text)}
+.btn-secondary:hover{background:#d5cfc7}
+.btn-danger{background:var(--warn-lt);color:var(--warn)}
+.btn-danger:hover{background:var(--warn);color:#fff}
+
+/* Store picker */
+.store-pick-grid{display:flex;flex-direction:column;gap:16px}
+.suburb-pick-section{}
+.suburb-pick-label{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.store-chips{display:flex;flex-wrap:wrap;gap:6px}
+.store-chip{border:1.5px solid var(--border);background:var(--bg);border-radius:20px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;color:var(--muted)}
+.store-chip.active{border-color:var(--accent);background:var(--accent-lt);color:var(--accent);font-weight:500}
+.store-chip:hover:not(.active){border-color:var(--muted)}
+
+/* Settings */
+.settings-section{margin-bottom:24px}
+.settings-title{font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:4px}
+.settings-desc{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.editable-list{display:flex;flex-direction:column;gap:6px}
+.editable-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.editable-emoji{font-size:16px;width:28px;text-align:center}
+.editable-name{flex:1;font-size:14px}
+.editable-del{border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px;border-radius:6px;transition:all .15s}
+.editable-del:hover{color:var(--warn);background:var(--warn-lt)}
+.add-new-row{display:flex;gap:8px;margin-top:8px}
+.add-emoji-input{width:48px;border:1px solid var(--border);border-radius:9px;padding:8px;text-align:center;font-size:16px;font-family:'DM Sans',sans-serif;background:var(--surface)}
+.add-text-input{flex:1;border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface);color:var(--text)}
+.add-text-input:focus,.add-emoji-input:focus{outline:none;border-color:var(--accent)}
+.parent-select{border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--surface);color:var(--text);width:100%;margin-bottom:8px}
+.parent-select:focus{outline:none;border-color:var(--accent)}
+
+/* Form */
+.form-field{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;display:block}
+.form-input{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface);transition:border-color .15s}
+.form-input:focus{outline:none;border-color:var(--accent)}
+.form-select{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface)}
+.form-select:focus{outline:none;border-color:var(--accent)}
+
+footer{text-align:center;padding:0 0 32px;font-size:12px;color:var(--muted);font-weight:300}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+@media(min-width:600px){
+  .modal-overlay{align-items:center;padding:24px}
+  .modal{border-radius:20px;max-height:80vh}
+  .modal-handle{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">My<span>OS</span></div>
+  <div class="header-right">
+    <a href="hub.html" class="back-link">← Hub</a>
+    <div id="date-display">—</div>
+  </div>
+</header>
+<div class="divider"><hr></div>
+
+<main>
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-label">Total items</div>
+      <div class="stat-value" id="stat-total">0</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-label">Checked off</div>
+      <div class="stat-value green" id="stat-checked">0</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-label">Stores needed</div>
+      <div class="stat-value" id="stat-stores">0</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-label">Untagged</div>
+      <div class="stat-value" id="stat-untagged">0</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="view-toggle">
+      <button class="view-btn active" id="view-store-btn" onclick="setView('store')">📍 By Store</button>
+      <button class="view-btn" id="view-cat-btn" onclick="setView('cat')">🗂 By Category</button>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn-sm" onclick="openSettings()">⚙️ Manage</button>
+      <button class="btn-sm" onclick="clearChecked()">Clear checked</button>
+      <button class="btn-sm accent" onclick="openAddItem()">+ Add item</button>
+    </div>
+  </div>
+
+  <div id="list-content"></div>
+</main>
+
+<footer>MyOS · Shopping · v1.0</footer>
+
+<!-- Store picker modal -->
+<div class="modal-overlay" id="store-modal" onclick="handleOverlay(event,'store-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><div class="modal-title" id="store-modal-title">Tag store</div></div>
+    <div class="modal-body">
+      <div class="store-pick-grid" id="store-pick-grid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('store-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="clearItemStore()">Clear tag</button>
+      <button class="btn btn-primary" onclick="confirmStoreTag()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add item modal -->
+<div class="modal-overlay" id="add-modal" onclick="handleOverlay(event,'add-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><div class="modal-title">Add item</div></div>
+    <div class="modal-body">
+      <div class="form-field">
+        <label class="form-label">Item name</label>
+        <input class="form-input" id="add-name" type="text" placeholder="e.g. Tissues" autocorrect="off">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="add-cat"></select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Suburb</label>
+        <select class="form-select" id="add-suburb" onchange="populateStoreSelect()"></select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Store</label>
+        <select class="form-select" id="add-store-select"></select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Qty</label>
+        <input class="form-input" id="add-qty" type="number" value="1" min="1" style="width:80px">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddItem()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settings-modal" onclick="handleOverlay(event,'settings-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><div class="modal-title">⚙️ Manage lists</div></div>
+    <div class="modal-body">
+
+      <div class="settings-section">
+        <div class="settings-title">Suburbs</div>
+        <div class="settings-desc">Suburbs you shop in. Stores are grouped under these.</div>
+        <div class="editable-list" id="suburb-list"></div>
+        <div class="add-new-row">
+          <input class="add-emoji-input" id="new-suburb-emoji" placeholder="📍" maxlength="2">
+          <input class="add-text-input" id="new-suburb-name" placeholder="New suburb..." autocorrect="off">
+          <button class="btn btn-primary" style="font-size:12px;padding:8px 14px" onclick="addSuburb()">Add</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Stores</div>
+        <div class="settings-desc">Stores under each suburb. Pick which suburb it belongs to.</div>
+        <div class="editable-list" id="store-list"></div>
+        <div class="add-new-row" style="flex-direction:column;gap:6px">
+          <select class="parent-select" id="new-store-suburb"></select>
+          <div style="display:flex;gap:8px">
+            <input class="add-emoji-input" id="new-store-emoji" placeholder="🏪" maxlength="2">
+            <input class="add-text-input" id="new-store-name" placeholder="New store..." autocorrect="off">
+            <button class="btn btn-primary" style="font-size:12px;padding:8px 14px" onclick="addStore()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Categories</div>
+        <div class="settings-desc">Broad groupings for your items. Edit name and emoji freely.</div>
+        <div class="editable-list" id="cat-list"></div>
+        <div class="add-new-row">
+          <input class="add-emoji-input" id="new-cat-emoji" placeholder="🛍️" maxlength="2">
+          <input class="add-text-input" id="new-cat-name" placeholder="New category..." autocorrect="off">
+          <button class="btn btn-primary" style="font-size:12px;padding:8px 14px" onclick="addCategory()">Add</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Default data ──────────────────────────────────────────────────────────────
+
+const DEFAULT_SUBURBS = [
+  {id:'s1', emoji:'📍', name:'Parramatta'},
+  {id:'s2', emoji:'📍', name:'Strathfield'},
+  {id:'s3', emoji:'📍', name:'Cabramatta'},
+  {id:'s4', emoji:'💻', name:'Online'},
+];
+
+const DEFAULT_STORES = [
+  {id:'st1',  suburbId:'s1', emoji:'🏪', name:'Coles'},
+  {id:'st2',  suburbId:'s1', emoji:'🏪', name:'Woolies'},
+  {id:'st3',  suburbId:'s1', emoji:'🏪', name:'Aldi'},
+  {id:'st4',  suburbId:'s1', emoji:'🌿', name:'Harris Farm'},
+  {id:'st5',  suburbId:'s1', emoji:'🥢', name:'Asian Grocer'},
+  {id:'st6',  suburbId:'s1', emoji:'💊', name:'Chemist Warehouse'},
+  {id:'st7',  suburbId:'s2', emoji:'🏪', name:'Coles'},
+  {id:'st8',  suburbId:'s2', emoji:'🥢', name:'Asian Grocer'},
+  {id:'st9',  suburbId:'s3', emoji:'🥢', name:'Asian Grocer'},
+  {id:'st10', suburbId:'s3', emoji:'🥩', name:'Butcher'},
+  {id:'st11', suburbId:'s4', emoji:'🛒', name:'Coles Online'},
+  {id:'st12', suburbId:'s4', emoji:'📦', name:'Amazon'},
+];
+
+const DEFAULT_CATS = [
+  {id:'c1', emoji:'🥗', name:'Food & Drink'},
+  {id:'c2', emoji:'🧴', name:'Toiletries & Personal Care'},
+  {id:'c3', emoji:'🧹', name:'Household & Cleaning'},
+  {id:'c4', emoji:'💊', name:'Health & Pharmacy'},
+  {id:'c5', emoji:'🛒', name:'Other'},
+];
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+
+function ls(key){ try{const s=localStorage.getItem(key);return s?JSON.parse(s):null;}catch(e){return null;} }
+function lsSave(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+
+function loadSuburbs(){ return ls('myos_shop_suburbs')||DEFAULT_SUBURBS.map(x=>({...x})); }
+function loadStores(){  return ls('myos_shop_stores') ||DEFAULT_STORES.map(x=>({...x})); }
+function loadCats(){    return ls('myos_shop_cats')   ||DEFAULT_CATS.map(x=>({...x})); }
+function loadItems(){   return ls('myos_shop_items')  ||[]; }
+function loadStoreMemory(){ return ls('myos_shop_ingredient_stores')||{}; }
+
+function save(){ lsSave('myos_shop_suburbs',suburbs); lsSave('myos_shop_stores',stores); lsSave('myos_shop_cats',cats); lsSave('myos_shop_items',items); lsSave('myos_shop_ingredient_stores',storeMemory); }
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let suburbs     = loadSuburbs();
+let stores      = loadStores();
+let cats        = loadCats();
+let items       = loadItems();
+let storeMemory = loadStoreMemory();
+let currentView = 'store';
+let tagItemId   = null;
+let selectedStoreId = null;
+
+// ── Pull from other modules ───────────────────────────────────────────────────
+
+function syncFromModules(){
+  // Pull meal ingredients from meal planner
+  const mealItems = ls('myos_shop_meals')||[];
+  // Pull household items from reservoir
+  const extraItems = ls('myos_shop_extras')||[];
+  const incoming = [...mealItems, ...extraItems];
+
+  incoming.forEach(inc=>{
+    const norm = inc.text.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const exists = items.find(i=> i.text.toLowerCase().replace(/[^a-z0-9]/g,'')=== norm);
+    if(!exists){
+      const remembered = storeMemory[norm];
+      items.push({
+        id:'i'+Date.now()+Math.random().toString(36).slice(2,6),
+        text: inc.text,
+        catId: inc.catId||cats[0].id,
+        storeId: remembered||null,
+        qty: inc.qty||1,
+        checked: false,
+        source: inc.source||null,
+      });
+    }
+  });
+  save();
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+
+function setView(v){
+  currentView = v;
+  document.getElementById('view-store-btn').classList.toggle('active', v==='store');
+  document.getElementById('view-cat-btn').classList.toggle('active',   v==='cat');
+  renderList();
+}
+
+function renderList(){
+  updateStats();
+  const content = document.getElementById('list-content');
+  const active  = items.filter(i=>!i.checked);
+  const done    = items.filter(i=>i.checked);
+
+  if(!items.length){
+    content.innerHTML = `<div class="empty-state"><strong>Your list is empty</strong><br>Add items manually or plan meals in the Meal Planner to auto-populate.</div>`;
+    return;
+  }
+
+  let html = '';
+
+  if(currentView==='store'){
+    // Group by suburb → store
+    const untagged = active.filter(i=>!i.storeId);
+    suburbs.forEach(suburb=>{
+      const subStores = stores.filter(st=>st.suburbId===suburb.id);
+      let suburbHasItems = false;
+      let suburbHtml = '';
+      subStores.forEach(store=>{
+        const storeItems = active.filter(i=>i.storeId===store.id);
+        if(!storeItems.length) return;
+        if(!suburbHasItems){ suburbHasItems=true; }
+        suburbHtml += `<div class="store-header">${store.emoji} ${store.name}</div>`;
+        suburbHtml += `<div class="shop-items">${storeItems.map(i=>renderItem(i)).join('')}</div>`;
+        suburbHtml += renderAddBar(store.id);
+      });
+      if(suburbHasItems){
+        html += `<div class="suburb-header">${suburb.emoji} ${suburb.name}</div>${suburbHtml}`;
+      }
+    });
+    if(untagged.length){
+      html += `<div class="suburb-header">🏷 Untagged</div><div class="store-header">Tap the store tag to assign</div><div class="shop-items">${untagged.map(i=>renderItem(i)).join('')}</div>`;
+    }
+  } else {
+    // Group by category
+    cats.forEach(cat=>{
+      const catItems = active.filter(i=>i.catId===cat.id);
+      if(!catItems.length) return;
+      html += `<div class="suburb-header">${cat.emoji} ${cat.name}</div><div class="shop-items">${catItems.map(i=>renderItem(i)).join('')}</div>`;
+    });
+    const uncatted = active.filter(i=>!cats.find(c=>c.id===i.catId));
+    if(uncatted.length){
+      html += `<div class="suburb-header">🛒 Uncategorised</div><div class="shop-items">${uncatted.map(i=>renderItem(i)).join('')}</div>`;
+    }
+  }
+
+  // Checked items at bottom
+  if(done.length){
+    html += `<div class="suburb-header" style="color:var(--muted);font-size:16px">✓ Done (${done.length})</div><div class="shop-items">${done.map(i=>renderItem(i)).join('')}</div>`;
+  }
+
+  // Global add bar at bottom
+  html += `<div style="margin-top:16px">${renderAddBar(null)}</div>`;
+
+  content.innerHTML = html;
+}
+
+function renderItem(item){
+  const store  = stores.find(s=>s.id===item.storeId);
+  const suburb = store ? suburbs.find(s=>s.id===store.suburbId) : null;
+  const storeLabel = store ? `${store.emoji} ${store.name}${suburb?', '+suburb.name:''}` : '+ Tag store';
+  const tagClass = store ? 'item-store-tag' : 'item-store-tag unset';
+  return `
+  <div class="shop-item ${item.checked?'checked':''}" id="item-${item.id}">
+    <div class="shop-check" onclick="toggleCheck('${item.id}')">${item.checked?'✓':''}</div>
+    <div class="item-body">
+      <div class="item-name">${item.text}</div>
+      <div class="item-meta">
+        <span class="${tagClass}" onclick="openStorePicker('${item.id}')">${storeLabel}</span>
+        ${item.source?`<span class="item-source">from ${item.source}</span>`:''}
+      </div>
+    </div>
+    <div class="item-qty">
+      <button class="qty-btn" onclick="adjustQty('${item.id}',-1)">−</button>
+      <div class="qty-val">${item.qty||1}</div>
+      <button class="qty-btn" onclick="adjustQty('${item.id}',1)">+</button>
+    </div>
+    <button class="item-del" onclick="deleteItem('${item.id}')">×</button>
+  </div>`;
+}
+
+function renderAddBar(storeId){
+  const sid = storeId||'';
+  return `<div class="add-item-bar">
+    <input class="add-item-input" placeholder="Add item here..." onkeydown="if(event.key==='Enter')quickAdd(this,'${sid}')" autocorrect="off">
+    <button class="add-item-btn" onclick="quickAdd(this.previousElementSibling,'${sid}')">Add</button>
+  </div>`;
+}
+
+function updateStats(){
+  const total    = items.length;
+  const checked  = items.filter(i=>i.checked).length;
+  const storeSet = new Set(items.filter(i=>i.storeId&&!i.checked).map(i=>i.storeId));
+  const untagged = items.filter(i=>!i.storeId&&!i.checked).length;
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-checked').textContent = checked;
+  document.getElementById('stat-stores').textContent  = storeSet.size;
+  document.getElementById('stat-untagged').textContent= untagged;
+}
+
+// ── Item actions ──────────────────────────────────────────────────────────────
+
+function toggleCheck(id){
+  const item = items.find(i=>i.id===id);
+  if(item){ item.checked=!item.checked; save(); renderList(); }
+}
+
+function adjustQty(id, delta){
+  const item = items.find(i=>i.id===id);
+  if(item){ item.qty = Math.max(1,(item.qty||1)+delta); save(); renderList(); }
+}
+
+function deleteItem(id){
+  items = items.filter(i=>i.id!==id);
+  save(); renderList();
+}
+
+function clearChecked(){
+  items = items.filter(i=>!i.checked);
+  save(); renderList();
+}
+
+function quickAdd(input, storeId){
+  const text = input.value.trim();
+  if(!text) return;
+  const norm = text.toLowerCase().replace(/[^a-z0-9]/g,'');
+  const remembered = storeMemory[norm];
+  items.push({
+    id:'i'+Date.now()+Math.random().toString(36).slice(2,6),
+    text, catId:cats[0].id,
+    storeId: storeId||remembered||null,
+    qty:1, checked:false, source:null,
+  });
+  input.value='';
+  save(); renderList();
+}
+
+// ── Store picker ──────────────────────────────────────────────────────────────
+
+function openStorePicker(id){
+  tagItemId = id;
+  const item = items.find(i=>i.id===id);
+  selectedStoreId = item ? item.storeId : null;
+  document.getElementById('store-modal-title').textContent = 'Tag store — '+( item?item.text:'');
+  const grid = document.getElementById('store-pick-grid');
+  grid.innerHTML = suburbs.map(suburb=>{
+    const subStores = stores.filter(st=>st.suburbId===suburb.id);
+    if(!subStores.length) return '';
+    return `<div class="suburb-pick-section">
+      <div class="suburb-pick-label">${suburb.emoji} ${suburb.name}</div>
+      <div class="store-chips">
+        ${subStores.map(st=>`<div class="store-chip ${selectedStoreId===st.id?'active':''}" onclick="selectStore('${st.id}',this)">${st.emoji} ${st.name}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('store-modal').classList.add('open');
+}
+
+function selectStore(storeId, el){
+  selectedStoreId = storeId;
+  document.querySelectorAll('.store-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function confirmStoreTag(){
+  const item = items.find(i=>i.id===tagItemId);
+  if(item&&selectedStoreId){
+    item.storeId = selectedStoreId;
+    // Save to memory so next time same ingredient auto-fills
+    const norm = item.text.toLowerCase().replace(/[^a-z0-9]/g,'');
+    storeMemory[norm] = selectedStoreId;
+    save();
+  }
+  closeModal('store-modal');
+  renderList();
+}
+
+function clearItemStore(){
+  const item = items.find(i=>i.id===tagItemId);
+  if(item){ item.storeId=null; save(); }
+  closeModal('store-modal');
+  renderList();
+}
+
+// ── Add item modal ────────────────────────────────────────────────────────────
+
+function openAddItem(){
+  document.getElementById('add-name').value='';
+  document.getElementById('add-qty').value='1';
+  // Populate category select
+  const catSel = document.getElementById('add-cat');
+  catSel.innerHTML = cats.map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  // Populate suburb select
+  const subSel = document.getElementById('add-suburb');
+  subSel.innerHTML = '<option value="">— No preference —</option>'+suburbs.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+  populateStoreSelect();
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('add-name').focus(),100);
+}
+
+function populateStoreSelect(){
+  const suburbId = document.getElementById('add-suburb').value;
+  const storeSel = document.getElementById('add-store-select');
+  const filtered = suburbId ? stores.filter(s=>s.suburbId===suburbId) : stores;
+  storeSel.innerHTML = '<option value="">— No store —</option>'+filtered.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+}
+
+function confirmAddItem(){
+  const text = document.getElementById('add-name').value.trim();
+  if(!text){ alert('Please enter an item name.'); return; }
+  const catId   = document.getElementById('add-cat').value;
+  const storeId = document.getElementById('add-store-select').value||null;
+  const qty     = parseInt(document.getElementById('add-qty').value)||1;
+  const norm    = text.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(storeId){ storeMemory[norm]=storeId; }
+  items.push({
+    id:'i'+Date.now()+Math.random().toString(36).slice(2,6),
+    text, catId, storeId, qty, checked:false, source:null,
+  });
+  save(); closeModal('add-modal'); renderList();
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+
+function openSettings(){
+  renderSuburbList();
+  renderStoreList();
+  renderCatList();
+  // Populate suburb select in new store row
+  document.getElementById('new-store-suburb').innerHTML =
+    suburbs.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function renderSuburbList(){
+  document.getElementById('suburb-list').innerHTML = suburbs.map(s=>`
+    <div class="editable-item">
+      <div class="editable-emoji">${s.emoji}</div>
+      <div class="editable-name">${s.name}</div>
+      <button class="editable-del" onclick="deleteSuburb('${s.id}')">×</button>
+    </div>`).join('');
+}
+
+function renderStoreList(){
+  document.getElementById('store-list').innerHTML = stores.map(st=>{
+    const sub = suburbs.find(s=>s.id===st.suburbId);
+    return `<div class="editable-item">
+      <div class="editable-emoji">${st.emoji}</div>
+      <div class="editable-name">${st.name} <span style="color:var(--muted);font-size:11px">${sub?'· '+sub.name:''}</span></div>
+      <button class="editable-del" onclick="deleteStore('${st.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+function renderCatList(){
+  document.getElementById('cat-list').innerHTML = cats.map(c=>`
+    <div class="editable-item">
+      <div class="editable-emoji">${c.emoji}</div>
+      <div class="editable-name">${c.name}</div>
+      <button class="editable-del" onclick="deleteCat('${c.id}')">×</button>
+    </div>`).join('');
+}
+
+function addSuburb(){
+  const name = document.getElementById('new-suburb-name').value.trim();
+  const emoji = document.getElementById('new-suburb-emoji').value.trim()||'📍';
+  if(!name) return;
+  suburbs.push({id:'s'+Date.now(), emoji, name});
+  save(); renderSuburbList();
+  document.getElementById('new-suburb-name').value='';
+  document.getElementById('new-suburb-emoji').value='';
+  // Refresh store suburb select
+  document.getElementById('new-store-suburb').innerHTML =
+    suburbs.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+}
+
+function addStore(){
+  const name     = document.getElementById('new-store-name').value.trim();
+  const emoji    = document.getElementById('new-store-emoji').value.trim()||'🏪';
+  const suburbId = document.getElementById('new-store-suburb').value;
+  if(!name||!suburbId) return;
+  stores.push({id:'st'+Date.now(), suburbId, emoji, name});
+  save(); renderStoreList();
+  document.getElementById('new-store-name').value='';
+  document.getElementById('new-store-emoji').value='';
+}
+
+function addCategory(){
+  const name  = document.getElementById('new-cat-name').value.trim();
+  const emoji = document.getElementById('new-cat-emoji').value.trim()||'🛍️';
+  if(!name) return;
+  cats.push({id:'c'+Date.now(), emoji, name});
+  save(); renderCatList();
+  document.getElementById('new-cat-name').value='';
+  document.getElementById('new-cat-emoji').value='';
+}
+
+function deleteSuburb(id){
+  if(!confirm('Delete this suburb? Stores under it will also be removed.')) return;
+  suburbs = suburbs.filter(s=>s.id!==id);
+  stores  = stores.filter(s=>s.suburbId!==id);
+  save(); renderSuburbList(); renderStoreList();
+}
+
+function deleteStore(id){
+  stores = stores.filter(s=>s.id!==id);
+  items.forEach(i=>{ if(i.storeId===id) i.storeId=null; });
+  save(); renderStoreList();
+}
+
+function deleteCat(id){
+  if(cats.length<=1){ alert('Keep at least one category.'); return; }
+  cats = cats.filter(c=>c.id!==id);
+  items.forEach(i=>{ if(i.catId===id) i.catId=cats[0].id; });
+  save(); renderCatList();
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function handleOverlay(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') ['store-modal','add-modal','settings-modal'].forEach(closeModal);
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+document.getElementById('date-display').textContent =
+  new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+syncFromModules();
+renderList();
+</script>
+</body>
+</html>

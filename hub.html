@@ -301,11 +301,11 @@ footer{text-align:center;padding:0 0 40px;font-size:12px;color:var(--muted);font
       <div class="card-footer"><div class="card-meta">Income · Expenses · Surplus</div><div class="card-arrow">↗</div></div>
     </div>
 
-    <div class="module-card" style="--ca:#5B4FCF;--ib:#EEEDFB" onclick="openModal('habits')">
-      <div class="card-top"><div class="card-icon">✅</div><div class="card-badge">Coming soon</div></div>
-      <div class="card-body"><h3>Habits & Routines</h3><p>Daily check-ins, streaks, morning and evening routine tracking.</p></div>
+    <a class="module-card" href="habits.html" style="--ca:#5B4FCF;--ib:#EEEDFB;text-decoration:none">
+      <div class="card-top"><div class="card-icon">✅</div><div class="card-badge live">Live</div></div>
+      <div class="card-body"><h3>Habits & Routines</h3><p id="habits-subdial">Routines, energy tracking and weekly rhythm.</p></div>
       <div class="card-footer"><div class="card-meta">Daily · Weekly · Streaks</div><div class="card-arrow">↗</div></div>
-    </div>
+    </a>
 
     <a class="module-card" href="meals-2.html" style="--ca:#C4622D;--ib:#FDF0E9;text-decoration:none">
       <div class="card-top"><div class="card-icon">🍳</div><div class="card-badge live">Live</div></div>
@@ -422,6 +422,7 @@ function initApp(){
   document.getElementById('greeting').textContent = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
   document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   loadCompass();
+  loadHabitsSubdial();
   loadMealsSubdial();
   loadReservoirSubdial();
   loadShoppingSubdial();
@@ -506,7 +507,6 @@ function saveBS(d){ localStorage.setItem('myos_bookshelf',JSON.stringify(d)); }
 // ═══════════════════════════════════════════════
 const info={
   budget:{t:'💰 Budget & Pay Cycle', b:'Track your fortnightly income, map every expense, and see your real monthly surplus. Coming next.'},
-  habits:{t:'✅ Habits & Routines',  b:'Daily habit check-ins, streaks, and morning/evening routine tracking.'},
   admin: {t:'📋 Admin & Checklists', b:'Pre-move checklist, life admin tasks, and important document tracker.'},
 };
 function openModal(k){
@@ -576,6 +576,25 @@ function loadShoppingSubdial(){
       const storeSet = [...new Set(active.filter(i=>i.storeId).map(i=>i.storeId))];
       const storeNames = storeSet.map(id=>{ const s=stores.find(x=>x.id===id); return s?s.name:''; }).filter(Boolean);
       el.innerHTML = `<strong>${active.length} items</strong> · ${storeNames.slice(0,2).join(', ')}${storeNames.length>2?' +more':''}`;
+    }
+  }catch(e){}
+}
+
+function loadHabitsSubdial(){
+  try{
+    const val = localStorage.getItem('myos_habits_subdial');
+    const el  = document.getElementById('habits-subdial');
+    const statEl = document.getElementById('habits-val');
+    if(val){
+      const parts = val.split(' / ');
+      const done  = parseInt(parts[0]);
+      const total = parseInt(parts[1]);
+      if(statEl) statEl.textContent = val;
+      if(el){
+        if(total===0) el.textContent = 'No routines set up yet.';
+        else if(done===total) el.innerHTML = `All <strong>${total}</strong> routines done today ✓`;
+        else el.innerHTML = `<strong>${done}</strong> of <strong>${total}</strong> routines done today`;
+      }
     }
   }catch(e){}
 }

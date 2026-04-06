@@ -1,18 +1,19 @@
-const CACHE = 'myos-v2';
+const CACHE = 'myos-v3';
 const CORE  = [
+  'index.html',
   'hub.html',
   'meals-2.html',
   'reservoir-1.html',
   'bookshelf.html',
+  'habits.html',
+  'shopping.html',
   'manifest.json',
 ];
-
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())
   );
 });
-
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
@@ -20,7 +21,6 @@ self.addEventListener('activate', e => {
       .then(() => self.clients.claim())
   );
 });
-
 self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {

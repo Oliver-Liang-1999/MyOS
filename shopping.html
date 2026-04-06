@@ -60,7 +60,9 @@ main{max-width:700px;margin:0 auto;padding:28px 24px 80px}
 .shop-check{width:20px;height:20px;border:1.5px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .15s}
 .shop-item.checked .shop-check{background:var(--accent);border-color:var(--accent);color:#fff}
 .item-body{flex:1;min-width:0}
-.item-name{font-size:14px;line-height:1.3}
+.item-name-input{border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);width:100%;outline:none;padding:0;line-height:1.3;cursor:text}
+.item-name-input:focus{border-bottom:1px solid var(--accent);}
+.shop-item.checked .item-name-input{text-decoration:line-through;color:var(--muted)}
 .item-meta{display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap}
 .item-store-tag{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--accent-lt);color:var(--accent);font-weight:500;cursor:pointer;white-space:nowrap}
 .item-store-tag.unset{background:var(--border);color:var(--muted)}
@@ -355,15 +357,13 @@ let selectedStoreId = null;
 // ── Pull from other modules ───────────────────────────────────────────────────
 
 function syncFromModules(){
-  // Pull meal ingredients from meal planner
-  const mealItems = ls('myos_shop_meals')||[];
-  // Pull household items from reservoir
+  const mealItems  = ls('myos_shop_meals')||[];
   const extraItems = ls('myos_shop_extras')||[];
-  const incoming = [...mealItems, ...extraItems];
+  const incoming   = [...mealItems, ...extraItems];
 
   incoming.forEach(inc=>{
     const norm = inc.text.toLowerCase().replace(/[^a-z0-9]/g,'');
-    const exists = items.find(i=> i.text.toLowerCase().replace(/[^a-z0-9]/g,'')=== norm);
+    const exists = items.find(i=>i.text.toLowerCase().replace(/[^a-z0-9]/g,'')=== norm);
     if(!exists){
       const remembered = storeMemory[norm];
       items.push({
@@ -457,7 +457,10 @@ function renderItem(item){
   <div class="shop-item ${item.checked?'checked':''}" id="item-${item.id}">
     <div class="shop-check" onclick="toggleCheck('${item.id}')">${item.checked?'✓':''}</div>
     <div class="item-body">
-      <div class="item-name">${item.text}</div>
+      <input class="item-name-input" value="${item.text.replace(/"/g,'&quot;')}"
+        onblur="renameItem('${item.id}',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()"
+        autocorrect="off" autocapitalize="none" spellcheck="false">
       <div class="item-meta">
         <span class="${tagClass}" onclick="openStorePicker('${item.id}')">${storeLabel}</span>
         ${item.source?`<span class="item-source">from ${item.source}</span>`:''}
@@ -492,6 +495,11 @@ function updateStats(){
 }
 
 // ── Item actions ──────────────────────────────────────────────────────────────
+
+function renameItem(id, val){
+  const item = items.find(i=>i.id===id);
+  if(item && val.trim()){ item.text=val.trim(); save(); }
+}
 
 function toggleCheck(id){
   const item = items.find(i=>i.id===id);

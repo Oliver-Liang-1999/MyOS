@@ -191,8 +191,6 @@ footer{text-align:center;padding:0 0 40px;font-size:12px;color:var(--muted);font
 
 @media(max-width:600px){
   header,.divider,main{padding-left:18px;padding-right:18px}
-  .energy-card{flex-direction:column-reverse;gap:14px}
-  .batteries-side{flex-direction:row;align-self:flex-end}
   .bat-outer{height:72px;width:26px}
 }
 </style>
@@ -440,7 +438,13 @@ function getChangelog(){ return JSON.parse(localStorage.getItem('myos_changelog'
 // UTILS
 // ═══════════════════════════════════════════════════
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){
+  const d = new Date();
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth()+1).padStart(2,'0');
+  const dy = String(d.getDate()).padStart(2,'0');
+  return yr+'-'+mo+'-'+dy;
+}
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function showToast(msg){

@@ -359,7 +359,7 @@ footer{text-align:center;padding:0 0 40px;font-size:12px;color:var(--muted);font
     <div class="week-snapshot" id="week-snapshot"></div>
     <div class="section-label" style="margin-top:20px">Your habits</div>
     <div class="lib-list" id="habits-list"></div>
-    <button class="pull-btn" id="add-habit-btn">+ Add habit</button>
+    <button class="pull-btn" id="add-habit-btn">+ Add habit (via Library)</button>
   </div>
 
   <!-- ══ LIBRARY TAB ══ -->
@@ -839,7 +839,7 @@ function getWeekDaysFrom(mondayStr){
   const mon=new Date(mondayStr+'T12:00:00'); const days=[];
   for(let i=0;i<7;i++){
     const d=new Date(mon); d.setDate(mon.getDate()+i);
-    days.push(d.toISOString().slice(0,10));
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
   }
   return days;
 }
@@ -848,7 +848,7 @@ function getWeekDays(){
   const mon=new Date(weekStartStr()+'T12:00:00'); const days=[];
   for(let i=0;i<7;i++){
     const d=new Date(mon); d.setDate(mon.getDate()+i);
-    days.push(d.toISOString().slice(0,10));
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
   }
   return days;
 }
@@ -1093,32 +1093,32 @@ function renderActivityList(){
 // ═══════════════════════════════════════════════════
 // RENDER — HABITS TAB
 // ═══════════════════════════════════════════════════
-function renderHabitsTab(){
-  renderWeekSnapshot();
-  renderHabitsList();
-}
-
 function renderWeekSnapshot(){
-  const acts=getActivities().filter(a=>a.isHabit);
-  const settings=getSettings();
-  const wrap=document.getElementById('week-snapshot');
-  const visible=acts.filter(a=>!(settings.presentationMode&&a.private));
-  if(!visible.length){ wrap.innerHTML='<div class="empty-state">No habits yet.</div>'; return; }
-  const days=getWeekDays();
-  wrap.innerHTML=visible.map(a=>{
-    const count=weekHabitCount(a.id);
-    const tgt=a.targetCount||1;
-    const met=a.direction==='build'?count>=tgt:count<=tgt;
-    const over=a.direction==='reduce'&&count>tgt;
-    const dots=days.map(d=>{
+  const acts    = getActivities().filter(a=>a.isHabit);
+  const settings= getSettings();
+  const wrap    = document.getElementById('week-snapshot');
+  const visible = acts.filter(a=>!(settings.presentationMode&&a.private));
+  if(!visible.length){
+    wrap.innerHTML='<div class="empty-state" style="padding:8px 0">No habits yet.</div>';
+    return;
+  }
+  const days = getWeekDays();
+  wrap.innerHTML = visible.map(a=>{
+    const count   = weekHabitCount(a.id);
+    const tgt     = a.targetCount||1;
+    const met     = a.direction==='build'?count>=tgt:count<=tgt;
+    const over    = a.direction==='reduce'&&count>tgt;
+    const rowClass= a.direction==='build'?'grow':'reduce';
+    const dots    = days.map(d=>{
       if(isFuture(d)) return '<div class="ws-dot"></div>';
-      const logged=isHabitLogged(a.id,d);
+      const logged = isHabitLogged(a.id,d);
       return `<div class="ws-dot${logged?(over?' over':' done'):''}"></div>`;
     }).join('');
-    const tgtLabel=over?`<span class="ws-tgt over">${count}/${tgt}</span>`
-      :met?`<span class="ws-tgt met">${count}/${tgt} ✓</span>`
-      :`<span class="ws-tgt">${count}/${tgt}</span>`;
-    const rowClass=a.direction==="build"?"grow":"reduce";
+    const tgtLabel= over
+      ? `<span class="ws-tgt over">${count}/${tgt}</span>`
+      : met
+        ? `<span class="ws-tgt met">${count}/${tgt} ✓</span>`
+        : `<span class="ws-tgt">${count}/${tgt}</span>`;
     return `<div class="ws-row ${rowClass}" data-habit-id="${a.id}">
       <span class="ws-icon">${esc(a.icon||'•')}</span>
       <span class="ws-name">${esc(a.name)}</span>
@@ -1131,39 +1131,59 @@ function renderWeekSnapshot(){
   });
 }
 
-function renderHabitsList(){
-  const acts=getActivities().filter(a=>a.isHabit);
-  const settings=getSettings();
-  const list=document.getElementById('habits-list');
-  const visible=acts.filter(a=>!(settings.presentationMode&&a.private));
-  if(!visible.length){ list.innerHTML='<div class="empty-state">No habits yet — add one below.</div>'; return; }
+function renderHabitsTab(){
+  renderWeekSnapshot();
+  renderHabitCards();
+}
+
+function renderHabitCards(){
+  const acts    = getActivities().filter(a=>a.isHabit);
+  const settings= getSettings();
+  const list    = document.getElementById('habits-list');
+  const visible = acts.filter(a=>!(settings.presentationMode&&a.private));
+  if(!visible.length){
+    list.innerHTML='<div class="empty-state">No habits yet — add one from the Library tab.</div>';
+    return;
+  }
   list.innerHTML='';
   visible.forEach((a,i)=>{
-    const card=document.createElement('div');
-    const colorClass=a.direction==='build'?'grow':'reduce';
-    card.className=`lib-card ${colorClass}`; card.style.animationDelay=(i*0.04)+'s';
-    const scoreClass=a.energyScore>0?'pos':a.energyScore<0?'neg':'zero';
-    const scoreText=a.energyScore>0?'+'+a.energyScore:String(a.energyScore);
-    const dirLabel=a.direction==='build'?'↑ Grow':'↓ Reduce';
+    const count   = weekHabitCount(a.id);
+    const tgt     = a.targetCount||1;
+    const onTarget= a.direction==='build'?count>=tgt:count<=tgt;
+    const colorClass = a.direction==='build'?'grow':'reduce';
+    const msTotal = (a.milestones||[]).length;
+    const msDone  = (a.milestones||[]).filter(m=>m.doneAt).length;
+    const tipsCount = (a.tips||[]).length;
+    const card = document.createElement('div');
+    card.className=`lib-card ${colorClass}`;
+    card.style.animationDelay=(i*0.04)+'s';
+    card.style.flexDirection='column';
+    card.style.alignItems='stretch';
+    card.style.gap='0';
+    card.style.padding='0';
+    card.style.overflow='hidden';
+
     card.innerHTML=`
-      <span class="lib-icon">${esc(a.icon||'•')}</span>
-      <div class="lib-body">
-        <div class="lib-name">${esc(a.name)}</div>
-        <div class="lib-meta">
-          <span>${dirLabel}</span>
-          <span>${a.targetCount||1}×/wk</span>
-          ${a.why?`<span style="font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">${esc(a.why)}</span>`:''}
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer" data-habit-open="${a.id}">
+        <span style="font-size:18px;width:26px;text-align:center;flex-shrink:0">${esc(a.icon||'•')}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500">${esc(a.name)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            ${a.direction==='build'?'↑ Grow':'↓ Reduce'} · ${count}/${tgt}×/wk ${onTarget?'✓':''}
+            ${a.why?'· <em>'+esc(a.why)+'</em>':''}
+          </div>
         </div>
-      </div>
-      <span class="lib-score ${scoreClass}">${scoreText}</span>`;
-    card.addEventListener('click',()=>openHabitDetail(a.id));
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+          ${msTotal?`<span style="font-size:10px;color:var(--muted)">${msDone}/${msTotal} milestones</span>`:''}
+          ${tipsCount?`<span style="font-size:10px;color:var(--muted)">${tipsCount} tips</span>`:''}
+        </div>
+      </div>`;
+
+    card.querySelector('[data-habit-open]').addEventListener('click',()=>openHabitDetail(a.id));
     list.appendChild(card);
   });
 }
-
-// ═══════════════════════════════════════════════════
-// RENDER — LIBRARY TAB
-// ═══════════════════════════════════════════════════
 function renderLibraryTab(){
   const acts=getActivities();
   const settings=getSettings();
@@ -1724,7 +1744,7 @@ function getReviewWeekStart(){
     const day = d.getDay();
     const diff = day===0?-6:1-day;
     d.setDate(d.getDate()+diff-7); // go back one full week
-    return d.toISOString().slice(0,10);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   }
 }
 

@@ -989,8 +989,8 @@ function renderRoutinesTab(){
 function renderEnergyCard(){
   const dd=getDayData(); const data=dd[selectedDate]||{};
   const editable=!isFuture(selectedDate);
-  setBattery('am', data.battery?.am??null);
-  setBattery('pm', data.battery?.pm??null);
+  setBattery('am', (data.battery&&data.battery.am!=null?data.battery.am:null)||null);
+  setBattery('pm', (data.battery&&data.battery.pm!=null?data.battery.pm:null)||null);
   const notesEl=document.getElementById('notes-input');
   notesEl.value=data.note||'';
   notesEl.disabled=!editable;
@@ -1071,7 +1071,7 @@ function renderActivityList(){
     btn.addEventListener('click',()=>{
       const id=btn.dataset.id; const dir=parseInt(btn.dataset.dir);
       const act=getActivities().find(a=>a.id===id); if(!act) return;
-      const current=getEnergyOverride(id,selectedDate)??act.energyScore;
+      const current=(getEnergyOverride(id,selectedDate)!==null?getEnergyOverride(id,selectedDate):act.energyScore);
       const next=Math.max(-10,Math.min(10,current+dir));
       setEnergyOverride(id,selectedDate,next===act.energyScore?null:next);
       renderActivityList();
@@ -1196,7 +1196,7 @@ function renderLibraryTab(){
     card.className='lib-card'; card.style.animationDelay=(i*0.04)+'s';
     const scoreClass=a.energyScore>0?'pos':a.energyScore<0?'neg':'zero';
     const scoreText=a.energyScore>0?'+'+a.energyScore:String(a.energyScore);
-    const recDays=a.recurrence?.days||[];
+    const recDays=(a.recurrence&&a.recurrence.days)||[];
     const recLabel=recDays.length?recDays.map(d=>DAY_SHORT[d]).join(' '):'manual only';
     card.innerHTML=`
       <span class="lib-icon">${esc(a.icon||'•')}</span>
@@ -1345,7 +1345,7 @@ async function callHaiku(systemPrompt, userPrompt){
     })
   });
   const data=await resp.json();
-  const text=data.content?.[0]?.text||'[]';
+  const text=(data.content&&data.content[0]&&data.content[0].text)||'[]';
   return JSON.parse(text.replace(/```json|```/g,'').trim());
 }
 
@@ -1396,8 +1396,8 @@ function openActivityModal(id){
     editingActId=id;
     const act=getActivities().find(a=>a.id===id); if(!act) return;
     afSteps=[...(act.steps||[])];
-    afDays=[...(act.recurrence?.days||[])];
-    afRepeat=act.recurrence?.repeatEvery||1;
+    afDays=[...((act.recurrence&&act.recurrence.days)||[])];
+    afRepeat=(act.recurrence&&act.recurrence.repeatEvery?act.recurrence.repeatEvery:1);
     afIsHabit=!!act.isHabit;
     afPrivate=!!act.private;
     document.getElementById('activity-modal-title').textContent='Edit activity';
@@ -1691,7 +1691,7 @@ function wireEvents(){
   document.getElementById('strip-score-minus').addEventListener('click',()=>{
     if(!stripActId) return;
     const act=getActivities().find(a=>a.id===stripActId); if(!act) return;
-    const cur=getEnergyOverride(stripActId,selectedDate)??act.energyScore;
+    const cur=(getEnergyOverride(stripActId,selectedDate)!==null?getEnergyOverride(stripActId,selectedDate):act.energyScore);
     const next=Math.max(-10,cur-1);
     setEnergyOverride(stripActId,selectedDate,next===act.energyScore?null:next);
     const v=document.getElementById('strip-score-val');
@@ -1702,7 +1702,7 @@ function wireEvents(){
   document.getElementById('strip-score-plus').addEventListener('click',()=>{
     if(!stripActId) return;
     const act=getActivities().find(a=>a.id===stripActId); if(!act) return;
-    const cur=getEnergyOverride(stripActId,selectedDate)??act.energyScore;
+    const cur=(getEnergyOverride(stripActId,selectedDate)!==null?getEnergyOverride(stripActId,selectedDate):act.energyScore);
     const next=Math.min(10,cur+1);
     setEnergyOverride(stripActId,selectedDate,next===act.energyScore?null:next);
     const v=document.getElementById('strip-score-val');
@@ -1769,13 +1769,13 @@ function openReview(){
   const titleEl = document.querySelector('#review-overlay .modal-title');
   if(titleEl) titleEl.textContent = 'Weekly Review  ' + getReviewWeekLabel(reviewWeek);
 
-  document.getElementById('review-intention').value = saved?.intention||'';
-  document.getElementById('review-final').value = saved?.finalThoughts||'';
+  document.getElementById('review-intention').value = (saved&&saved.intention)||'';
+  document.getElementById('review-final').value = (saved&&saved.finalThoughts)||'';
 
   renderReviewGaps(reviewWeek);
   renderReviewTracking(reviewWeek);
 
-  if(saved?.observations?.length){
+  if((saved&&saved.observations&&saved.observations.length)){
     renderObservations(saved.observations, saved.notes||{});
     document.getElementById('review-gen-btn').innerHTML='<span>✦</span> Regenerate';
   } else {
@@ -1875,7 +1875,7 @@ function renderReviewGaps(reviewWeek){
           if(!dayActs.length) return '<div style="font-size:12px;color:var(--muted);font-style:italic">Nothing scheduled.</div>';
           return dayActs.map(a=>{
             const skipped=isSkipped(a.id,d);
-            const score=(getEnergyOverride(a.id,d)??a.energyScore);
+            const score=((getEnergyOverride(a.id,d)!==null?getEnergyOverride(a.id,d):a.energyScore));
             const st=score>0?'+'+score:String(score);
             const sc=score>0?'var(--green)':score<0?'var(--warn)':'var(--muted)';
             return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
@@ -1971,8 +1971,8 @@ async function generateReviewObservations(){
 
     // Build summary for Haiku
     const batterySummary = days.filter(d=>!isFuture(d)).map(d=>{
-      const bat=dd[d]?.battery||{};
-      return `${dayLabel(d)}: AM ${bat.am??'—'}/10, PM ${bat.pm??'—'}/10`;
+      const bat=(dd[d]&&dd[d].battery)||{};
+      return `${dayLabel(d)}: AM ${bat.am||'—'}/10, PM ${bat.pm||'—'}/10`;
     }).join(' | ');
 
     const habitSummary = habits.map(a=>{
@@ -2003,7 +2003,7 @@ Never use the word "failed". Keep each under 25 words.`,
       })
     });
     const data  = await resp.json();
-    const text  = data.content?.[0]?.text||'[]';
+    const text  = (data.content&&data.content[0]&&data.content[0].text)||'[]';
     const obs   = JSON.parse(text.replace(/\`\`\`json|\`\`\`/g,'').trim());
     if(!Array.isArray(obs)) throw new Error('Not array');
     renderObservations(obs,{});
@@ -2292,7 +2292,7 @@ function renderReviewTracking(reviewWeek){
       const id=this.dataset.rtScoreId; const d=this.dataset.rtScoreDay;
       const val=parseInt(this.value);
       const act=getActivities().find(a=>a.id===id);
-      setEnergyOverride(id,d,val===act?.energyScore?null:val);
+      setEnergyOverride(id,d,val===(act&&act.energyScore)?null:val);
       const valEl=wrap.querySelector(`.rt-score-val[data-rt-score-id="${id}"][data-rt-score-day="${d}"]`);
       if(valEl){
         valEl.textContent=val>0?'+'+val:String(val);

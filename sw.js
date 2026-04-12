@@ -1,4 +1,4 @@
-const CACHE = 'myos-v4.3';
+const CACHE = 'myos-v4.4';
 const CORE  = [
   'index.html',
   'hub.html',
